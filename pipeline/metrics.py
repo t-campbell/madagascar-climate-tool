@@ -129,7 +129,9 @@ def monthly_climatology(
         monthly_total.append(round(sum(totals) / len(totals), 1))
         rainy_days.append(round(sum(counts) / len(counts), 1))
         heavy_rain_days.append(round(sum(heavy_counts) / len(heavy_counts), 1))
-        wet_intensity.append(\n            round(sum(wet_values) / len(wet_values), 1) if wet_values else 0.0\n        )
+        wet_intensity.append(
+            round(sum(wet_values) / len(wet_values), 1) if wet_values else 0.0
+        )
         total_p10.append(round(_quantile(totals, 0.1), 1))
         total_p90.append(round(_quantile(totals, 0.9), 1))
         minimum_c.append(round(sum(mins) / len(mins), 1) if mins else float("nan"))
