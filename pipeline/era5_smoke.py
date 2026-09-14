@@ -29,7 +29,7 @@ def run_smoke_test(day: date, output: Path | None = None) -> dict[str, object]:
         "units": "degrees Celsius",
         "samples": samples_as_dicts(samples),
     }
-    rendered = json.dumps(result, indent=2, sort_keys=True)
+    rendered = json.dumps(result, indent=2, sort_keys=True, allow_nan=False)
     if output:
         output.write_text(rendered + "\n", encoding="utf-8")
     print(rendered)

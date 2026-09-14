@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import date
+import math
 import os
 from pathlib import Path
 from typing import Iterable
@@ -24,6 +25,7 @@ class TemperatureSample:
     cell_latitude: float
     cell_longitude: float
     temperature_c: float
+    used_land_fallback: bool
 
 
 def _coordinate_name(dataset, candidates: tuple[str, ...]) -> str:
@@ -110,24 +112,71 @@ def sample_temperature_file(
             )
 
         samples: list[TemperatureSample] = []
+        latitude = temperature[latitude_name]
+        longitude = temperature[longitude_name]
         for point in points:
-            selected = temperature.sel(
-                {
-                    latitude_name: point.latitude,
-                    longitude_name: point.longitude,
-                },
-                method="nearest",
-            )
-            value = float(selected.item())
+            nearest_latitude = int(abs(latitude - point.latitude).argmin().item())
+            nearest_longitude = int(abs(longitude - point.longitude).argmin().item())
+            best: tuple[float, float, float, float, bool] | None = None
+            longitude_scale = math.cos(math.radians(point.latitude))
+
+            for latitude_index in range(
+                max(0, nearest_latitude - 2),
+                min(latitude.size, nearest_latitude + 3),
+            ):
+                for longitude_index in range(
+                    max(0, nearest_longitude - 2),
+                    min(longitude.size, nearest_longitude + 3),
+                ):
+                    selected = temperature.isel(
+                        {
+                            latitude_name: latitude_index,
+                            longitude_name: longitude_index,
+                        }
+                    )
+                    value = float(selected.item())
+                    if not math.isfinite(value):
+                        continue
+                    cell_latitude = float(latitude.isel(
+                        {latitude_name: latitude_index}
+                    ).item())
+                    cell_longitude = float(longitude.isel(
+                        {longitude_name: longitude_index}
+                    ).item())
+                    distance = (
+                        (cell_latitude - point.latitude) ** 2
+                        + (
+                            (cell_longitude - point.longitude)
+                            * longitude_scale
+                        ) ** 2
+                    )
+                    candidate = (
+                        distance,
+                        value,
+                        cell_latitude,
+                        cell_longitude,
+                        latitude_index != nearest_latitude
+                        or longitude_index != nearest_longitude,
+                    )
+                    if best is None or candidate[0] < best[0]:
+                        best = candidate
+
+            if best is None:
+                raise ValueError(
+                    f"no valid ERA5-Land cell within 0.2 degrees of {point.name}"
+                )
+
+            _, value, cell_latitude, cell_longitude, used_land_fallback = best
             samples.append(
                 TemperatureSample(
                     id=point.id,
                     name=point.name,
                     latitude=point.latitude,
                     longitude=point.longitude,
-                    cell_latitude=float(selected[latitude_name].item()),
-                    cell_longitude=float(selected[longitude_name].item()),
+                    cell_latitude=cell_latitude,
+                    cell_longitude=cell_longitude,
                     temperature_c=round(_to_celsius(value, units), 2),
+                    used_land_fallback=used_land_fallback,
                 )
             )
     return samples
