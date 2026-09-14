@@ -22,6 +22,7 @@ from pipeline.sources import chirps_daily_url
 DRY_SPELL_DAYS = 10
 HALO_DAYS = DRY_SPELL_DAYS - 1
 GRID_HALO_CELLS = 1
+CHIRPS_MISSING_SENTINEL = -9999.0
 
 
 def target_days(year: int):
@@ -189,6 +190,11 @@ def reduce_year(year: int, output: Path, summary_output: Path | None = None) -> 
                 raster = dataset.read(1, window=window, masked=True)
                 valid = ~np.ma.getmaskarray(raster)
                 values = np.asarray(raster.filled(np.nan), dtype=np.float32)
+                # CHIRPS v3 COGs currently contain the documented -9999
+                # missing-value sentinel without exposing it as GDAL nodata.
+                sentinel_missing = values == CHIRPS_MISSING_SENTINEL
+                valid &= ~sentinel_missing
+                values[sentinel_missing] = np.nan
                 if land_mask is None:
                     land_mask = valid.copy()
                 elif not np.array_equal(valid, land_mask):
