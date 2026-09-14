@@ -1,0 +1,36 @@
+name: CHIRPS validation year
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Complete CHIRPS Final year to process
+        required: true
+        default: "2020"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/chirps-year.yml"
+      - "pipeline/chirps_point_year.py"
+
+permissions:
+  contents: read
+
+jobs:
+  validation-year:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: install geospatial reader
+        run: python -m pip install "numpy>=2,<3" "rasterio>=1.4,<2"
+      - name: process validation year
+        run: >-
+          python -m pipeline.chirps_point_year
+          --year ${{ inputs.year || '2020' }}
+          --output chirps-validation-year.json
+      - name: validate JSON output
+        run: python -m json.tool chirps-validation-year.json
