@@ -1,6 +1,6 @@
 # Data pipeline design
 
-Status: implementation design, source requests not yet authenticated
+Status: implementation in progress; CHIRPS and CDS source access validated
 
 ## Why the pipeline crops remotely
 
@@ -15,7 +15,7 @@ For recent preliminary observations, the source currently publishes ordinary dai
 1. Run one job for each year from 1991 through 2020.
 2. For each daily Final RNL COG, read only the Madagascar bounding window plus a one-cell buffer.
 3. Reject missing days, unexpected transforms, changed resolution, negative rainfall other than declared no-data values, and duplicate dates.
-4. Maintain monthly totals, rainy-day counts, heavy-rain-day counts, wet-day samples or mergeable quantile sketches, and dry-spell state for every grid cell.
+4. Maintain monthly totals, rainy-day counts, heavy-rain-day counts, wet-day rainfall sums and counts, and dry-spell state for every grid cell.
 5. Emit a compact yearly partial result.
 6. Merge all complete years into the 1991–2020 climate normal.
 7. Apply the Madagascar land mask.

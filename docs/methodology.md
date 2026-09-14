@@ -36,7 +36,7 @@ The tool describes historical climate patterns and recent observed departures fr
 - Rainy-day frequency: mean count of rainy days per month across complete years.
 - Heavy-rain day: daily rainfall greater than or equal to 20 mm (the ETCCDI R20mm threshold).
 - Heavy-rain-day frequency: mean count of heavy-rain days per month across complete years.
-- Wet-day intensity: median daily rainfall among rainy days.
+- Wet-day intensity: mean daily rainfall among rainy days (the ETCCDI simple daily intensity index, SDII).
 - Monthly variability: 10th, 50th, and 90th percentiles of monthly totals across complete years.
 - Dry spell: consecutive days with rainfall below 1.0 mm.
 - Dry-spell risk: proportion of complete years in which a dry spell of the stated length begins or continues within the reporting period.

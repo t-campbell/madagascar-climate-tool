@@ -36,6 +36,7 @@ class ClimateMetricTests(unittest.TestCase):
         self.assertEqual(result["monthlyTotalMm"], list(map(float, range(1, 13))))
         self.assertEqual(result["rainyDays"], [1.0] * 12)
         self.assertEqual(result["heavyRainDays"], [0.0] * 12)
+        self.assertEqual(result["wetDayIntensityMm"], list(map(float, range(1, 13))))
         self.assertEqual(result["monthlyMinC"], [11.0] * 12)
         self.assertEqual(result["monthlyMaxC"], [21.0] * 12)
 
