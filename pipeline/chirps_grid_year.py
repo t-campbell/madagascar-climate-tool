@@ -1,4 +1,7 @@
-"""Reduce one CHIRPS year to compact Madagascar-grid partial statistics."""
+"""Reduce one CHIRPS year to compact Madagascar-grid partial statistics.
+
+The saved partial contains mergeable sums and counts, not daily source rasters.
+"""
 
 from __future__ import annotations
 
