@@ -1,7 +1,11 @@
 from datetime import date
 import unittest
 
-from pipeline.sources import chirps_daily_url, era5_land_daily_request
+from pipeline.sources import (
+    chirps_daily_url,
+    era5_land_daily_request,
+    era5_land_year_request,
+)
 
 
 class SourceRequestTests(unittest.TestCase):
@@ -27,6 +31,13 @@ class SourceRequestTests(unittest.TestCase):
     def test_invalid_statistic_is_rejected(self):
         with self.assertRaises(ValueError):
             era5_land_daily_request(2020, 1, "daily_guess")
+
+
+    def test_era5_year_request_has_all_months_and_halo(self):
+        dataset, request = era5_land_year_request(2020, "daily_minimum")
+        self.assertEqual(dataset, "derived-era5-land-daily-statistics")
+        self.assertEqual(request["month"], [f"{month:02d}" for month in range(1, 13)])
+        self.assertEqual(request["area"], [-10.9, 42.9, -26.1, 51.1])
 
 
 if __name__ == "__main__":

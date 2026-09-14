@@ -1,0 +1,45 @@
+name: ERA5-Land Madagascar grid benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: Complete ERA5-Land year to reduce
+        required: true
+        default: "2020"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/era5-grid-year.yml"
+      - "pipeline/era5_grid_year.py"
+      - "pipeline/sources.py"
+
+permissions:
+  contents: read
+
+jobs:
+  national-grid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: install ERA5-Land pipeline
+        run: >-
+          python -m pip install
+          "cdsapi>=0.7.7,<1"
+          "numpy>=2,<3"
+          "xarray>=2025.1,<2027"
+          "netCDF4>=1.7,<2"
+      - name: reduce complete temperature grid
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+        run: >-
+          python -m pipeline.era5_grid_year
+          --year ${{ inputs.year || '2020' }}
+          --output /tmp/era5-land-grid-year.npz
+          --summary era5-land-grid-summary.json
+      - name: validate summary
+        run: python -m json.tool era5-land-grid-summary.json

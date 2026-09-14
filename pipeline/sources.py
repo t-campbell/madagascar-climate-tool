@@ -56,3 +56,14 @@ def era5_land_daily_request(
     }
     return dataset, request
 
+
+
+def era5_land_year_request(
+    year: int,
+    statistic: str,
+) -> tuple[str, dict[str, object]]:
+    """Build one complete-year ERA5-Land daily temperature request."""
+    dataset, request = era5_land_daily_request(year, 1, statistic)
+    request["month"] = [f"{month:02d}" for month in range(1, 13)]
+    request["area"] = [-10.9, 42.9, -26.1, 51.1]
+    return dataset, request
