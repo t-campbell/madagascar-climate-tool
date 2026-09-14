@@ -126,7 +126,7 @@ function svgElement(name, attributes = {}) {
   return node;
 }
 
-function renderRainChart(values) {
+function renderRainChart(values, rainyDays, heavyRainDays) {
   const width = 760;
   const height = 230;
   const margin = { top: 12, right: 12, bottom: 34, left: 44 };
@@ -156,7 +156,7 @@ function renderRainChart(values) {
       class: "rain-bar",
     });
     const title = svgElement("title");
-    title.textContent = `${MONTHS[index]}: ${value} mm`;
+    title.textContent = `${MONTHS[index]}: ${value} mm · ${rainyDays[index]} rainy days · ${heavyRainDays[index]} days ≥20 mm`;
     rect.append(title);
     svg.append(rect);
     const label = svgElement("text", { x: margin.left + index * slot + slot / 2, y: height - 12, "text-anchor": "middle" });
@@ -208,10 +208,18 @@ function renderTemperatureChart(minimums, maximums) {
 function buildInterpretation(location) {
   const rain = location.rainfall.monthlyTotalMm;
   const risk = location.rainfall.drySpellRisk10d;
+  const heavyRainDays = location.rainfall.heavyRainDays;
   const annual = rain.reduce((sum, value) => sum + value, 0);
   const wetMonths = rain.filter((value) => value >= 150).length;
   const riskyMonths = risk.filter((value) => value >= 0.6).length;
   const notes = [];
+  const mostHeavyDays = Math.max(...heavyRainDays);
+  const heavyMonths = MONTHS.filter(
+    (_, index) => heavyRainDays[index] >= mostHeavyDays - 0.5
+  );
+  notes.push(
+    `Days with at least 20 mm are most frequent in ${heavyMonths.join(", ")} (about ${mostHeavyDays.toFixed(1)} per month in the historical record).`
+  );
   if (wetMonths >= 8) {
     notes.push("Rain is distributed through much of the year, so drainage, disease pressure, and short rain-free work windows may matter more than annual water supply.");
   } else if (wetMonths >= 4) {
@@ -233,11 +241,13 @@ function buildInterpretation(location) {
 function renderReport(location, request) {
   const rain = location.rainfall.monthlyTotalMm;
   const dryRisk = location.rainfall.drySpellRisk10d;
+  const heavyRainDays = location.rainfall.heavyRainDays;
   const minimums = location.temperature.monthlyMinC;
   const maximums = location.temperature.monthlyMaxC;
   const wettestIndex = rain.indexOf(Math.max(...rain));
   const driestIndex = rain.indexOf(Math.min(...rain));
   const highestRiskIndex = dryRisk.indexOf(Math.max(...dryRisk));
+  const highestHeavyIndex = heavyRainDays.indexOf(Math.max(...heavyRainDays));
   const annual = rain.reduce((sum, value) => sum + value, 0);
 
   elements.reportRegion.textContent = `${location.district}, ${location.region}`;
@@ -246,7 +256,7 @@ function renderReport(location, request) {
   elements.reportThrough.textContent = location.current.through;
   elements.releaseType.textContent = location.current.releaseType;
   elements.annualRain.textContent = `${Math.round(annual).toLocaleString()} mm`;
-  elements.rainSeason.textContent = `wettest: ${MONTHS[wettestIndex]} · driest: ${MONTHS[driestIndex]}`;
+  elements.rainSeason.textContent = `wettest: ${MONTHS[wettestIndex]} · most ≥20 mm days: ${MONTHS[highestHeavyIndex]}`;
   elements.dryRisk.textContent = `${Math.round(dryRisk[highestRiskIndex] * 100)}%`;
   elements.drySeason.textContent = `highest in ${MONTHS[highestRiskIndex]}`;
   elements.tempRange.textContent = `${Math.min(...minimums).toFixed(1)}–${Math.max(...maximums).toFixed(1)} °C`;
@@ -254,11 +264,11 @@ function renderReport(location, request) {
   elements.anomalyValue.textContent = `${location.current.anomalyPercent > 0 ? "+" : ""}${location.current.anomalyPercent.toFixed(1)}%`;
   elements.cellDetails.textContent = `rain cell ${location.cells.rain.resolutionDegrees}° centered at ${location.cells.rain.lat}, ${location.cells.rain.lon}; temperature cell ${location.cells.temperature.resolutionDegrees}° centered at ${location.cells.temperature.lat}, ${location.cells.temperature.lon}.`;
 
-  renderRainChart(rain);
+  renderRainChart(rain, location.rainfall.rainyDays, heavyRainDays);
   renderTemperatureChart(minimums, maximums);
   elements.rainTableBody.replaceChildren(...MONTHS.map((month, index) => {
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${month}</td><td>${rain[index]} mm</td><td>${location.rainfall.rainyDays[index]}</td><td>${location.rainfall.wetDayIntensityMm[index]} mm</td>`;
+    row.innerHTML = `<td>${month}</td><td>${rain[index]} mm</td><td>${location.rainfall.rainyDays[index]}</td><td>${heavyRainDays[index]}</td><td>${location.rainfall.wetDayIntensityMm[index]} mm</td>`;
     return row;
   }));
   elements.interpretationList.replaceChildren(...buildInterpretation(location).map((note) => {

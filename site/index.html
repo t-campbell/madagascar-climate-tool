@@ -100,8 +100,8 @@
           <div id="rain-chart" class="chart" role="img" aria-label="monthly rainfall bar chart"></div>
           <div class="chart-table-wrap">
             <table id="rain-table">
-              <caption class="visually-hidden">monthly rainfall totals and rainy days</caption>
-              <thead><tr><th>month</th><th>rain</th><th>rainy days</th><th>wet-day intensity</th></tr></thead>
+              <caption class="visually-hidden">monthly rainfall totals, rainy-day frequency, heavy-rain-day frequency, and wet-day intensity</caption>
+              <thead><tr><th>month</th><th>mean rain</th><th>rainy days</th><th>days ≥20 mm</th><th>median wet day</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -146,7 +146,7 @@
         <div class="methods-grid">
           <p><strong>rainfall:</strong> designed for CHIRPS v3 at 0.05° resolution, using a 1991–2020 baseline and nearby-cell comparison.</p>
           <p><strong>temperature:</strong> designed for ERA5-Land at 0.1° resolution. the tool does not invent finer temperature detail.</p>
-          <p><strong>rainy day:</strong> at least 1 mm of rainfall. dry-spell risk is based on consecutive days below that threshold.</p>
+          <p><strong>rain frequency:</strong> a rainy day has at least 1 mm. a heavy-rain day has at least 20 mm. both columns show the mean number of days per month across the baseline years.</p>
           <p><strong>current season:</strong> stored separately from the baseline and labeled provisional until final source data replace it.</p>
         </div>
       </section>

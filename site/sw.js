@@ -1,4 +1,4 @@
-const CACHE_NAME = "mg-climate-prototype-v1";
+const CACHE_NAME = "mg-climate-prototype-v2";
 const CORE_ASSETS = [
   "./",
   "index.html",

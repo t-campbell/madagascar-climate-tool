@@ -1,45 +1,106 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/schemas/climate-tile-0.1.json",
+  "$id": "https://example.invalid/schemas/climate-tile-0.2.json",
   "title": "Madagascar climate tile",
   "type": "object",
-  "required": ["schemaVersion", "tileId", "status", "locations"],
+  "required": [
+    "schemaVersion",
+    "tileId",
+    "status",
+    "locations"
+  ],
   "properties": {
-    "schemaVersion": { "const": "0.1" },
-    "tileId": { "type": "string", "pattern": "^[NS][0-9]{2}_[EW][0-9]{3}$" },
-    "status": { "enum": ["fixture", "candidate", "operational"] },
+    "schemaVersion": {
+      "const": "0.2"
+    },
+    "tileId": {
+      "type": "string",
+      "pattern": "^[NS][0-9]{2}_[EW][0-9]{3}$"
+    },
+    "status": {
+      "enum": [
+        "fixture",
+        "candidate",
+        "operational"
+      ]
+    },
     "locations": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "coordinates", "rainfall", "temperature"],
+        "required": [
+          "id",
+          "name",
+          "coordinates",
+          "rainfall",
+          "temperature"
+        ],
         "properties": {
-          "id": { "type": "string" },
-          "name": { "type": "string" },
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
           "coordinates": {
             "type": "object",
-            "required": ["lat", "lon"],
+            "required": [
+              "lat",
+              "lon"
+            ],
             "properties": {
-              "lat": { "type": "number", "minimum": -26, "maximum": -11 },
-              "lon": { "type": "number", "minimum": 43, "maximum": 51 }
+              "lat": {
+                "type": "number",
+                "minimum": -26,
+                "maximum": -11
+              },
+              "lon": {
+                "type": "number",
+                "minimum": 43,
+                "maximum": 51
+              }
             }
           },
           "rainfall": {
             "type": "object",
-            "required": ["monthlyTotalMm", "rainyDays", "wetDayIntensityMm", "drySpellRisk10d"],
+            "required": [
+              "monthlyTotalMm",
+              "rainyDays",
+              "heavyRainDays",
+              "wetDayIntensityMm",
+              "drySpellRisk10d"
+            ],
             "properties": {
-              "monthlyTotalMm": { "$ref": "#/$defs/monthArray" },
-              "rainyDays": { "$ref": "#/$defs/monthArray" },
-              "wetDayIntensityMm": { "$ref": "#/$defs/monthArray" },
-              "drySpellRisk10d": { "$ref": "#/$defs/probabilityArray" }
+              "monthlyTotalMm": {
+                "$ref": "#/$defs/monthArray"
+              },
+              "rainyDays": {
+                "$ref": "#/$defs/monthArray"
+              },
+              "wetDayIntensityMm": {
+                "$ref": "#/$defs/monthArray"
+              },
+              "drySpellRisk10d": {
+                "$ref": "#/$defs/probabilityArray"
+              },
+              "heavyRainDays": {
+                "$ref": "#/$defs/monthArray"
+              }
             }
           },
           "temperature": {
             "type": "object",
-            "required": ["monthlyMinC", "monthlyMaxC"],
+            "required": [
+              "monthlyMinC",
+              "monthlyMaxC"
+            ],
             "properties": {
-              "monthlyMinC": { "$ref": "#/$defs/monthArray" },
-              "monthlyMaxC": { "$ref": "#/$defs/monthArray" }
+              "monthlyMinC": {
+                "$ref": "#/$defs/monthArray"
+              },
+              "monthlyMaxC": {
+                "$ref": "#/$defs/monthArray"
+              }
             }
           }
         }
@@ -51,14 +112,19 @@
       "type": "array",
       "minItems": 12,
       "maxItems": 12,
-      "items": { "type": "number" }
+      "items": {
+        "type": "number"
+      }
     },
     "probabilityArray": {
       "type": "array",
       "minItems": 12,
       "maxItems": 12,
-      "items": { "type": "number", "minimum": 0, "maximum": 1 }
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
     }
   }
 }
-

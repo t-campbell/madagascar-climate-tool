@@ -35,8 +35,17 @@ class ClimateMetricTests(unittest.TestCase):
         result = monthly_climatology(observations)
         self.assertEqual(result["monthlyTotalMm"], list(map(float, range(1, 13))))
         self.assertEqual(result["rainyDays"], [1.0] * 12)
+        self.assertEqual(result["heavyRainDays"], [0.0] * 12)
         self.assertEqual(result["monthlyMinC"], [11.0] * 12)
         self.assertEqual(result["monthlyMaxC"], [21.0] * 12)
+
+    def test_heavy_rain_day_threshold_is_inclusive(self):
+        observations = [
+            DailyObservation(date(1991, month, 1), 20.0)
+            for month in range(1, 13)
+        ]
+        result = monthly_climatology(observations)
+        self.assertEqual(result["heavyRainDays"], [1.0] * 12)
 
     def test_invalid_temperature_is_rejected(self):
         observations = []

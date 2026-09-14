@@ -1,12 +1,13 @@
 {
-  "schemaVersion": "0.1",
-  "productVersion": "0.1.0-fixture",
+  "schemaVersion": "0.2",
+  "productVersion": "0.2.0-fixture",
   "status": "fixture",
-  "generatedAt": "2026-09-14T00:00:00Z",
+  "generatedAt": "2026-09-14T15:00:00Z",
   "normalPeriod": "1991-2020",
   "rainfall": {
     "source": "CHIRPS v3 design target",
-    "resolutionDegrees": 0.05
+    "resolutionDegrees": 0.05,
+    "heavyRainDayThresholdMm": 20
   },
   "temperature": {
     "source": "ERA5-Land design target",
@@ -21,4 +22,3 @@
   "places": "data/places.json",
   "fixtureNotice": "Prototype values are demonstration fixtures and must not be used for operational planting decisions."
 }
-

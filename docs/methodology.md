@@ -2,7 +2,7 @@
 
 Status: draft for review
 
-Version: 0.1.0
+Version: 0.2.0
 
 ## Product boundary
 
@@ -34,6 +34,8 @@ The tool describes historical climate patterns and recent observed departures fr
 - Rainy day: daily rainfall greater than or equal to 1.0 mm.
 - Monthly rainfall: sum of daily rainfall within the calendar month.
 - Rainy-day frequency: mean count of rainy days per month across complete years.
+- Heavy-rain day: daily rainfall greater than or equal to 20 mm (the ETCCDI R20mm threshold).
+- Heavy-rain-day frequency: mean count of heavy-rain days per month across complete years.
 - Wet-day intensity: median daily rainfall among rainy days.
 - Monthly variability: 10th, 50th, and 90th percentiles of monthly totals across complete years.
 - Dry spell: consecutive days with rainfall below 1.0 mm.

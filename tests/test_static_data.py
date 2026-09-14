@@ -27,9 +27,10 @@ class StaticDataTests(unittest.TestCase):
             for location in tile["locations"]:
                 rain = location["rainfall"]
                 temperature = location["temperature"]
-                for key in ("monthlyTotalMm", "rainyDays", "wetDayIntensityMm", "drySpellRisk10d"):
+                for key in ("monthlyTotalMm", "rainyDays", "heavyRainDays", "wetDayIntensityMm", "drySpellRisk10d"):
                     self.assertEqual(len(rain[key]), 12)
                 self.assertTrue(all(value >= 0 for value in rain["monthlyTotalMm"]))
+                self.assertTrue(all(heavy <= rainy for heavy, rainy in zip(rain["heavyRainDays"], rain["rainyDays"])))
                 self.assertTrue(all(0 <= value <= 1 for value in rain["drySpellRisk10d"]))
                 self.assertEqual(len(temperature["monthlyMinC"]), 12)
                 self.assertEqual(len(temperature["monthlyMaxC"]), 12)

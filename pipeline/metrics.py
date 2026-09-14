@@ -14,6 +14,7 @@ from typing import Iterable
 
 
 RAINY_DAY_MM = 1.0
+HEAVY_RAIN_DAY_MM = 20.0
 MONTHS = tuple(range(1, 13))
 
 
@@ -83,6 +84,7 @@ def monthly_climatology(
 
     monthly_total: list[float] = []
     rainy_days: list[float] = []
+    heavy_rain_days: list[float] = []
     wet_intensity: list[float] = []
     total_p10: list[float] = []
     total_p90: list[float] = []
@@ -101,6 +103,10 @@ def monthly_climatology(
         totals = [sum(item.rainfall_mm for item in group) for group in groups]
         counts = [
             sum(item.rainfall_mm >= RAINY_DAY_MM for item in group) for group in groups
+        ]
+        heavy_counts = [
+            sum(item.rainfall_mm >= HEAVY_RAIN_DAY_MM for item in group)
+            for group in groups
         ]
         wet_values = [
             item.rainfall_mm
@@ -123,6 +129,7 @@ def monthly_climatology(
 
         monthly_total.append(round(sum(totals) / len(totals), 1))
         rainy_days.append(round(sum(counts) / len(counts), 1))
+        heavy_rain_days.append(round(sum(heavy_counts) / len(heavy_counts), 1))
         wet_intensity.append(round(median(wet_values), 1) if wet_values else 0.0)
         total_p10.append(round(_quantile(totals, 0.1), 1))
         total_p90.append(round(_quantile(totals, 0.9), 1))
@@ -132,6 +139,7 @@ def monthly_climatology(
     return {
         "monthlyTotalMm": monthly_total,
         "rainyDays": rainy_days,
+        "heavyRainDays": heavy_rain_days,
         "wetDayIntensityMm": wet_intensity,
         "monthlyTotalP10Mm": total_p10,
         "monthlyTotalP90Mm": total_p90,
