@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#12324a">
+    <meta name="description" content="Low-bandwidth rainfall and temperature patterns for locations across Madagascar.">
+    <title>Madagascar climate field guide</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="Madagascar climate field guide home">
+        <span class="brand-mark" aria-hidden="true">MG</span>
+        <span>climate field guide</span>
+      </a>
+      <a class="method-link" href="#methods">methods</a>
+    </header>
+
+    <main id="top">
+      <section class="search-panel" aria-labelledby="search-title">
+        <div>
+          <p class="eyebrow">rainfall + temperature</p>
+          <h1 id="search-title">check a location in Madagascar</h1>
+        </div>
+
+        <form id="place-form" class="place-search" role="search">
+          <label for="place-input">town or settlement</label>
+          <div class="input-action">
+            <input id="place-input" name="place" type="search" autocomplete="off" placeholder="try Fenerive Est or Tana" aria-describedby="search-help">
+            <button type="submit">search</button>
+          </div>
+          <p id="search-help" class="field-help">prototype index: three test locations</p>
+          <div id="suggestions" class="suggestions" role="listbox" aria-label="matching places" hidden></div>
+        </form>
+
+        <details class="coordinate-box">
+          <summary>use coordinates instead</summary>
+          <form id="coordinate-form" class="coordinate-form">
+            <label for="latitude">latitude
+              <input id="latitude" name="latitude" type="number" inputmode="decimal" min="-26" max="-11" step="any" placeholder="-17.381" required>
+            </label>
+            <label for="longitude">longitude
+              <input id="longitude" name="longitude" type="number" inputmode="decimal" min="43" max="51" step="any" placeholder="49.409" required>
+            </label>
+            <button type="submit">check coordinates</button>
+            <button type="button" class="secondary" id="location-button">use my location</button>
+          </form>
+        </details>
+
+        <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
+      </section>
+
+      <aside id="fixture-notice" class="fixture-notice" role="note">
+        <strong>demonstration data</strong>
+        <span>this build tests the interface and data contract. do not use these fixture values for planting decisions.</span>
+      </aside>
+
+      <section id="report" class="report" aria-live="polite" aria-busy="true">
+        <header class="report-header">
+          <div>
+            <p class="eyebrow" id="report-region">loading location</p>
+            <h2 id="report-title">climate report</h2>
+            <p class="coordinates" id="report-coordinates"></p>
+          </div>
+          <div class="freshness">
+            <span>observations through</span>
+            <strong id="report-through">loading</strong>
+            <span id="release-type"></span>
+          </div>
+        </header>
+
+        <div class="summary-grid">
+          <article class="summary-card rain-card">
+            <span>typical annual rain</span>
+            <strong id="annual-rain">—</strong>
+            <small id="rain-season">—</small>
+          </article>
+          <article class="summary-card dry-card">
+            <span>highest 10-day dry-spell risk</span>
+            <strong id="dry-risk">—</strong>
+            <small id="dry-season">—</small>
+          </article>
+          <article class="summary-card temp-card">
+            <span>typical temperature span</span>
+            <strong id="temp-range">—</strong>
+            <small>monthly mean minimum to maximum</small>
+          </article>
+        </div>
+
+        <article class="chart-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">historical pattern</p>
+              <h3>rain through the year</h3>
+            </div>
+            <div class="legend" aria-label="chart legend"><span class="rain-key"></span>monthly rainfall</div>
+          </div>
+          <div id="rain-chart" class="chart" role="img" aria-label="monthly rainfall bar chart"></div>
+          <div class="chart-table-wrap">
+            <table id="rain-table">
+              <caption class="visually-hidden">monthly rainfall totals and rainy days</caption>
+              <thead><tr><th>month</th><th>rain</th><th>rainy days</th><th>wet-day intensity</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="chart-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">historical pattern</p>
+              <h3>temperature range</h3>
+            </div>
+            <div class="legend"><span class="temperature-key"></span>monthly min–max</div>
+          </div>
+          <div id="temperature-chart" class="chart" role="img" aria-label="monthly temperature range chart"></div>
+        </article>
+
+        <article class="current-section">
+          <div>
+            <p class="eyebrow">current season</p>
+            <h3 id="current-heading">rainfall compared with normal</h3>
+            <p id="current-copy"></p>
+          </div>
+          <div class="anomaly" id="anomaly-value">—</div>
+        </article>
+
+        <article class="interpretation-section">
+          <p class="eyebrow">field interpretation</p>
+          <h3>what the pattern suggests</h3>
+          <ul id="interpretation-list"></ul>
+          <p class="caution">this describes historical climate and recent observations. it is not a forecast.</p>
+        </article>
+
+        <footer class="resolution-note">
+          <strong>spatial basis</strong>
+          <span id="cell-details"></span>
+        </footer>
+      </section>
+
+      <section id="methods" class="methods">
+        <p class="eyebrow">methods</p>
+        <h2>what these numbers mean</h2>
+        <div class="methods-grid">
+          <p><strong>rainfall:</strong> designed for CHIRPS v3 at 0.05° resolution, using a 1991–2020 baseline and nearby-cell comparison.</p>
+          <p><strong>temperature:</strong> designed for ERA5-Land at 0.1° resolution. the tool does not invent finer temperature detail.</p>
+          <p><strong>rainy day:</strong> at least 1 mm of rainfall. dry-spell risk is based on consecutive days below that threshold.</p>
+          <p><strong>current season:</strong> stored separately from the baseline and labeled provisional until final source data replace it.</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>built for low-bandwidth field use</span>
+      <span id="offline-status">checking offline support</span>
+    </footer>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
+

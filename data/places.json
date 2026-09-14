@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "0.1",
+  "status": "fixture",
+  "places": [
+    {
+      "id": "fenoarivo-atsinanana",
+      "name": "Fenoarivo Atsinanana",
+      "aliases": ["Fenerive Est", "Fenoarivo", "Fénérive-Est"],
+      "district": "Fenoarivo Atsinanana",
+      "region": "Analanjirofo",
+      "lat": -17.381,
+      "lon": 49.409,
+      "tileId": "S18_E049"
+    },
+    {
+      "id": "antananarivo",
+      "name": "Antananarivo",
+      "aliases": ["Tana"],
+      "district": "Antananarivo Renivohitra",
+      "region": "Analamanga",
+      "lat": -18.879,
+      "lon": 47.507,
+      "tileId": "S19_E047"
+    },
+    {
+      "id": "toliara",
+      "name": "Toliara",
+      "aliases": ["Tuléar", "Tulear"],
+      "district": "Toliara I",
+      "region": "Atsimo-Andrefana",
+      "lat": -23.351,
+      "lon": 43.685,
+      "tileId": "S24_E043"
+    }
+  ]
+}
+

@@ -1,0 +1,58 @@
+"""Source request construction for CHIRPS v3 and ERA5-Land.
+
+This module performs no network calls. Keeping request construction pure makes
+upstream filename or API changes visible in tests before an expensive build.
+"""
+
+from __future__ import annotations
+
+from datetime import date
+
+
+CHIRPS_BASE = "https://data.chc.ucsb.edu/products/CHIRPS/v3.0/daily"
+MADAGASCAR_AREA = [-11.0, 43.0, -26.0, 51.0]  # north, west, south, east
+
+
+def chirps_daily_url(day: date, release: str = "final") -> str:
+    """Return the authoritative daily raster URL for a CHIRPS v3 release.
+
+    Final RNL data have Cloud-Optimized GeoTIFFs suitable for spatial HTTP range
+    reads. Preliminary SAT data currently use ordinary TIFFs and should only be
+    acquired for recent observations.
+    """
+    stamp = day.isoformat().replace("-", ".")
+    if release == "final":
+        return (
+            f"{CHIRPS_BASE}/final/rnl/cogs/{day.year}/"
+            f"chirps-v3.0.rnl.{stamp}.cog"
+        )
+    if release == "preliminary":
+        return (
+            f"{CHIRPS_BASE}/prelim/sat/{day.year}/"
+            f"chirps-v3.0.prelim.{stamp}.tif"
+        )
+    raise ValueError("release must be 'final' or 'preliminary'")
+
+
+def era5_land_daily_request(
+    year: int,
+    month: int,
+    statistic: str,
+) -> tuple[str, dict[str, object]]:
+    """Build a CDS request for daily 2 m temperature over Madagascar."""
+    if statistic not in {"daily_minimum", "daily_maximum", "daily_mean"}:
+        raise ValueError("unsupported daily statistic")
+    dataset = "derived-era5-land-daily-statistics"
+    request: dict[str, object] = {
+        "variable": ["2m_temperature"],
+        "year": [str(year)],
+        "month": [f"{month:02d}"],
+        "day": [f"{day:02d}" for day in range(1, 32)],
+        "daily_statistic": statistic,
+        "time_zone": "utc+03:00",
+        "frequency": "1_hourly",
+        "area": MADAGASCAR_AREA,
+        "data_format": "netcdf",
+    }
+    return dataset, request
+

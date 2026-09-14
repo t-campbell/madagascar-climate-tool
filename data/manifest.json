@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "0.1",
+  "productVersion": "0.1.0-fixture",
+  "status": "fixture",
+  "generatedAt": "2026-09-14T00:00:00Z",
+  "normalPeriod": "1991-2020",
+  "rainfall": {
+    "source": "CHIRPS v3 design target",
+    "resolutionDegrees": 0.05
+  },
+  "temperature": {
+    "source": "ERA5-Land design target",
+    "resolutionDegrees": 0.1
+  },
+  "current": {
+    "through": "2026-08-31",
+    "releaseType": "demonstration",
+    "provisional": true
+  },
+  "tileTemplate": "data/tiles/{tileId}.json",
+  "places": "data/places.json",
+  "fixtureNotice": "Prototype values are demonstration fixtures and must not be used for operational planting decisions."
+}
+
