@@ -1,0 +1,79 @@
+name: CHIRPS 1991-2020 climate normal
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/chirps-baseline.yml"
+      - "pipeline/chirps_grid_baseline.py"
+
+permissions:
+  contents: read
+
+jobs:
+  yearly-partials:
+    if: github.event_name == 'workflow_dispatch' || github.event.head_commit.message == 'Build CHIRPS climate normal'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        year: [1991, 1992, 1993, 1994, 1995, 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: install geospatial reader
+        run: python -m pip install "numpy>=2,<3" "rasterio>=1.4,<2"
+      - name: reduce yearly national grid
+        run: >-
+          python -m pipeline.chirps_grid_year
+          --year ${{ matrix.year }}
+          --output chirps-${{ matrix.year }}.npz
+          --summary chirps-${{ matrix.year }}.json
+      - name: upload yearly partial
+        uses: actions/upload-artifact@v7
+        with:
+          name: chirps-${{ matrix.year }}
+          path: |
+            chirps-${{ matrix.year }}.npz
+            chirps-${{ matrix.year }}.json
+          compression-level: 0
+          retention-days: 7
+
+  merge-normal:
+    needs: yearly-partials
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: chirps-*
+          path: partials
+          merge-multiple: true
+      - name: install merger
+        run: python -m pip install "numpy>=2,<3"
+      - name: merge climate normal
+        run: >-
+          python -m pipeline.chirps_grid_baseline
+          partials/*.npz
+          --output chirps-1991-2020.npz
+          --summary chirps-1991-2020.json
+      - name: validate summary
+        run: python -m json.tool chirps-1991-2020.json
+      - name: upload climate normal
+        uses: actions/upload-artifact@v7
+        with:
+          name: chirps-1991-2020
+          path: |
+            chirps-1991-2020.npz
+            chirps-1991-2020.json
+          compression-level: 0
+          retention-days: 30
