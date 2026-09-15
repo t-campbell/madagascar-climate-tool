@@ -224,8 +224,7 @@ def reduce_year(
     }
     rendered = json.dumps(summary, indent=2, sort_keys=True, allow_nan=False)
     if summary_output:
-        summary_output.write_text(rendered + "
-", encoding="utf-8")
+        summary_output.write_text(rendered + "\n", encoding="utf-8")
     print(rendered)
     return summary
 
