@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 from datetime import date
 import json
 import math
@@ -13,7 +14,7 @@ import time
 
 from pipeline.chirps_smoke import VALIDATION_POINTS
 from pipeline.era5_land import CDS_API_URL, _coordinate_name, _temperature_variable
-from pipeline.sources import era5_land_year_request
+from pipeline.sources import era5_land_period_request
 
 
 def _to_celsius_array(values, units: str | None):
@@ -27,21 +28,22 @@ def _to_celsius_array(values, units: str | None):
     raise ValueError(f"cannot determine temperature units: {units!r}")
 
 
-def _download_year(
+def _download_period(
     year: int,
+    months: tuple[int, ...],
     statistic: str,
     destination: Path,
     token: str,
 ) -> Path:
     import cdsapi
 
-    dataset, request = era5_land_year_request(year, statistic)
+    dataset, request = era5_land_period_request(year, months, statistic)
     client = cdsapi.Client(url=CDS_API_URL, key=token)
     client.retrieve(dataset, request, str(destination))
     return destination
 
 
-def _monthly_means(source: Path):
+def _monthly_means(source: Path, selected_months: tuple[int, ...]):
     import numpy as np
     import xarray as xr
 
@@ -60,10 +62,24 @@ def _monthly_means(source: Path):
             data.attrs.get("units"),
         )
         months = np.asarray(data[time_name].dt.month.values)
-        if values.shape[0] not in {365, 366}:
-            raise ValueError(f"expected a complete year, found {values.shape[0]} days")
+        expected_days = sum(
+            calendar.monthrange(int(data[time_name].dt.year.values[0]), month)[1]
+            for month in selected_months
+        )
+        if values.shape[0] != expected_days:
+            raise ValueError(
+                f"expected {expected_days} selected-month days, "
+                f"found {values.shape[0]}"
+            )
+        if set(months.tolist()) != set(selected_months):
+            raise ValueError(
+                f"expected months {selected_months}, found {sorted(set(months.tolist()))}"
+            )
         monthly = np.stack(
-            [np.nanmean(values[months == month], axis=0) for month in range(1, 13)]
+            [
+                np.nanmean(values[months == month], axis=0)
+                for month in selected_months
+            ]
         ).astype(np.float32)
         latitude = np.asarray(data[latitude_name].values, dtype=np.float32)
         longitude = np.asarray(data[longitude_name].values, dtype=np.float32)
@@ -117,37 +133,48 @@ def reduce_year(
     output: Path,
     summary_output: Path | None = None,
     *,
+    months: tuple[int, ...] = tuple(range(1, 13)),
     api_token: str | None = None,
 ) -> dict[str, object]:
+    if not 1950 <= year < date.today().year:
+        raise ValueError("year must be a complete ERA5-Land year from 1950 onward")
+    if not months or len(months) != len(set(months)):
+        raise ValueError("months must be non-empty and unique")
+    if tuple(sorted(months)) != months or any(month < 1 or month > 12 for month in months):
+        raise ValueError("months must be sorted values from 1 through 12")
+    token = api_token or os.environ.get("CDS_API_TOKEN")
+    if not token:
+        raise RuntimeError("CDS_API_TOKEN is not set")
+
     try:
         import numpy as np
     except ImportError as error:
         raise RuntimeError("numpy is required for ERA5-Land processing") from error
 
-    if not 1950 <= year < date.today().year:
-        raise ValueError("year must be a complete ERA5-Land year from 1950 onward")
-    token = api_token or os.environ.get("CDS_API_TOKEN")
-    if not token:
-        raise RuntimeError("CDS_API_TOKEN is not set")
-
     started = time.monotonic()
     with tempfile.TemporaryDirectory(prefix=f"era5-land-{year}-") as directory:
         directory_path = Path(directory)
-        minimum_path = _download_year(
+        minimum_path = _download_period(
             year,
+            months,
             "daily_minimum",
             directory_path / "minimum.nc",
             token,
         )
-        maximum_path = _download_year(
+        maximum_path = _download_period(
             year,
+            months,
             "daily_maximum",
             directory_path / "maximum.nc",
             token,
         )
-        monthly_minimum, latitude, longitude = _monthly_means(minimum_path)
+        monthly_minimum, latitude, longitude = _monthly_means(
+            minimum_path,
+            months,
+        )
         monthly_maximum, maximum_latitude, maximum_longitude = _monthly_means(
-            maximum_path
+            maximum_path,
+            months,
         )
 
     if not np.array_equal(latitude, maximum_latitude) or not np.array_equal(
@@ -168,6 +195,7 @@ def reduce_year(
         format_version=np.array("0.1"),
         source=np.array("ERA5-Land post-processed daily statistics"),
         year=np.array(year, dtype=np.int16),
+        months=np.asarray(months, dtype=np.uint8),
         latitude=latitude,
         longitude=longitude,
         land_mask=land_mask,
@@ -177,6 +205,7 @@ def reduce_year(
     summary: dict[str, object] = {
         "source": "ERA5-Land post-processed daily statistics",
         "year": year,
+        "months": list(months),
         "elapsedSeconds": round(time.monotonic() - started, 1),
         "partialBytes": output.stat().st_size,
         "grid": {
@@ -195,7 +224,8 @@ def reduce_year(
     }
     rendered = json.dumps(summary, indent=2, sort_keys=True, allow_nan=False)
     if summary_output:
-        summary_output.write_text(rendered + "\n", encoding="utf-8")
+        summary_output.write_text(rendered + "
+", encoding="utf-8")
     print(rendered)
     return summary
 
@@ -203,10 +233,16 @@ def reduce_year(
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--year", type=int, default=2020)
+    parser.add_argument("--months", nargs="+", type=int, default=list(range(1, 13)))
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--summary", type=Path)
     arguments = parser.parse_args()
-    reduce_year(arguments.year, arguments.output, arguments.summary)
+    reduce_year(
+        arguments.year,
+        arguments.output,
+        arguments.summary,
+        months=tuple(arguments.months),
+    )
 
 
 if __name__ == "__main__":

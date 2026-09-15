@@ -2,14 +2,6 @@ name: ERA5-Land live-source smoke test
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/era5-smoke.yml"
-      - "pipeline/era5_land.py"
-      - "pipeline/era5_smoke.py"
-      - "pipeline/sources.py"
-      - "requirements-pipeline.txt"
 
 permissions:
   contents: read

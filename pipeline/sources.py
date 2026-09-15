@@ -58,12 +58,25 @@ def era5_land_daily_request(
 
 
 
+def era5_land_period_request(
+    year: int,
+    months: tuple[int, ...],
+    statistic: str,
+) -> tuple[str, dict[str, object]]:
+    """Build a bounded ERA5-Land daily request for selected months."""
+    if not months or len(months) != len(set(months)):
+        raise ValueError("months must be a non-empty sequence without duplicates")
+    if any(month < 1 or month > 12 for month in months):
+        raise ValueError("months must be between 1 and 12")
+    dataset, request = era5_land_daily_request(year, months[0], statistic)
+    request["month"] = [f"{month:02d}" for month in months]
+    request["area"] = [-10.9, 42.9, -26.1, 51.1]
+    return dataset, request
+
+
 def era5_land_year_request(
     year: int,
     statistic: str,
 ) -> tuple[str, dict[str, object]]:
     """Build one complete-year ERA5-Land daily temperature request."""
-    dataset, request = era5_land_daily_request(year, 1, statistic)
-    request["month"] = [f"{month:02d}" for month in range(1, 13)]
-    request["area"] = [-10.9, 42.9, -26.1, 51.1]
-    return dataset, request
+    return era5_land_period_request(year, tuple(range(1, 13)), statistic)

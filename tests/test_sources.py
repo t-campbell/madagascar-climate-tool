@@ -4,6 +4,7 @@ import unittest
 from pipeline.sources import (
     chirps_daily_url,
     era5_land_daily_request,
+    era5_land_period_request,
     era5_land_year_request,
 )
 
@@ -32,6 +33,16 @@ class SourceRequestTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             era5_land_daily_request(2020, 1, "daily_guess")
 
+
+    def test_era5_period_request_uses_selected_months(self):
+        dataset, request = era5_land_period_request(
+            2020,
+            (1, 2, 3),
+            "daily_minimum",
+        )
+        self.assertEqual(dataset, "derived-era5-land-daily-statistics")
+        self.assertEqual(request["month"], ["01", "02", "03"])
+        self.assertEqual(request["area"], [-10.9, 42.9, -26.1, 51.1])
 
     def test_era5_year_request_has_all_months_and_halo(self):
         dataset, request = era5_land_year_request(2020, "daily_minimum")

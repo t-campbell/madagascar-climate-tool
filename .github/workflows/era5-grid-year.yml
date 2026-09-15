@@ -1,10 +1,10 @@
-name: ERA5-Land Madagascar grid benchmark
+name: ERA5-Land Madagascar quarter benchmark
 
 on:
   workflow_dispatch:
     inputs:
       year:
-        description: Complete ERA5-Land year to reduce
+        description: ERA5-Land year to reduce
         required: true
         default: "2020"
   push:
@@ -33,13 +33,14 @@ jobs:
           "numpy>=2,<3"
           "xarray>=2025.1,<2027"
           "netCDF4>=1.7,<2"
-      - name: reduce complete temperature grid
+      - name: reduce Q1 temperature grid
         env:
           CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
         run: >-
           python -m pipeline.era5_grid_year
           --year ${{ inputs.year || '2020' }}
-          --output /tmp/era5-land-grid-year.npz
+          --months 1 2 3
+          --output /tmp/era5-land-grid-q1.npz
           --summary era5-land-grid-summary.json
       - name: validate summary
         run: python -m json.tool era5-land-grid-summary.json
