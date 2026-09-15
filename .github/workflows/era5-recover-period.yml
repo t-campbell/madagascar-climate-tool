@@ -17,11 +17,6 @@ on:
       maximum_request_id:
         description: Successful CDS daily-maximum request ID
         required: true
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/era5-recover-period.yml"
-
 permissions:
   contents: read
 
@@ -36,10 +31,10 @@ jobs:
         include:
           - label: minimum
             slug: minimum
-            request_id: ${{ inputs.minimum_request_id || 'ce1ae778-5999-4247-abde-a0819fc15705' }}
+            request_id: ${{ inputs.minimum_request_id }}
           - label: maximum
             slug: maximum
-            request_id: ${{ inputs.maximum_request_id || '89c719df-4565-48b5-8168-2ab79e403db6' }}
+            request_id: ${{ inputs.maximum_request_id }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
