@@ -14,6 +14,8 @@
 
 The active manifest is not changed when acquisition, processing, validation, or deployment fails. Users continue receiving the last verified release. The interface displays the observation date of that release.
 
+An ERA5-Land submission that outlives a GitHub runner is not resubmitted. Staff copy the preserved CDS request IDs into the period-recovery workflow after both requests show `successful` in the CDS dashboard. Recovery downloads the existing results and builds the reduced partial without repeating the data request.
+
 ## Rollback
 
 A production rollback changes the active manifest to a previously verified release and redeploys the static site. At least three verified releases should be retained.
@@ -33,4 +35,3 @@ A production rollback changes the active manifest to a previously verified relea
 4. Trigger a staging deployment.
 5. Confirm rollback access.
 6. Remove the departing custodian.
-
