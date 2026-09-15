@@ -13,6 +13,7 @@ import tempfile
 import time
 
 from pipeline.chirps_smoke import VALIDATION_POINTS
+from pipeline.era5_download_period import parse_months_csv
 from pipeline.era5_land import CDS_API_URL, _coordinate_name, _temperature_variable
 from pipeline.sources import era5_land_period_request
 
@@ -75,12 +76,19 @@ def _monthly_means(source: Path, selected_months: tuple[int, ...]):
             raise ValueError(
                 f"expected months {selected_months}, found {sorted(set(months.tolist()))}"
             )
-        monthly = np.stack(
-            [
-                np.nanmean(values[months == month], axis=0)
-                for month in selected_months
-            ]
-        ).astype(np.float32)
+        monthly_values = []
+        for month in selected_months:
+            selected = values[months == month]
+            finite_count = np.sum(np.isfinite(selected), axis=0)
+            monthly_values.append(
+                np.divide(
+                    np.nansum(selected, axis=0),
+                    finite_count,
+                    out=np.full(selected.shape[1:], np.nan, dtype=np.float32),
+                    where=finite_count > 0,
+                )
+            )
+        monthly = np.stack(monthly_values).astype(np.float32)
         latitude = np.asarray(data[latitude_name].values, dtype=np.float32)
         longitude = np.asarray(data[longitude_name].values, dtype=np.float32)
         return monthly, latitude, longitude
@@ -128,23 +136,26 @@ def _sample_monthly(minimum, maximum, land_mask, latitude, longitude):
     return samples
 
 
-def reduce_year(
-    year: int,
-    output: Path,
-    summary_output: Path | None = None,
-    *,
-    months: tuple[int, ...] = tuple(range(1, 13)),
-    api_token: str | None = None,
-) -> dict[str, object]:
+def _validate_period(year: int, months: tuple[int, ...]) -> None:
     if not 1950 <= year < date.today().year:
         raise ValueError("year must be a complete ERA5-Land year from 1950 onward")
     if not months or len(months) != len(set(months)):
         raise ValueError("months must be non-empty and unique")
     if tuple(sorted(months)) != months or any(month < 1 or month > 12 for month in months):
         raise ValueError("months must be sorted values from 1 through 12")
-    token = api_token or os.environ.get("CDS_API_TOKEN")
-    if not token:
-        raise RuntimeError("CDS_API_TOKEN is not set")
+
+
+def reduce_files(
+    year: int,
+    minimum_path: Path,
+    maximum_path: Path,
+    output: Path,
+    summary_output: Path | None = None,
+    *,
+    months: tuple[int, ...] = tuple(range(1, 13)),
+) -> dict[str, object]:
+    """Reduce already-downloaded minimum and maximum files to one partial."""
+    _validate_period(year, months)
 
     try:
         import numpy as np
@@ -152,30 +163,14 @@ def reduce_year(
         raise RuntimeError("numpy is required for ERA5-Land processing") from error
 
     started = time.monotonic()
-    with tempfile.TemporaryDirectory(prefix=f"era5-land-{year}-") as directory:
-        directory_path = Path(directory)
-        minimum_path = _download_period(
-            year,
-            months,
-            "daily_minimum",
-            directory_path / "minimum.nc",
-            token,
-        )
-        maximum_path = _download_period(
-            year,
-            months,
-            "daily_maximum",
-            directory_path / "maximum.nc",
-            token,
-        )
-        monthly_minimum, latitude, longitude = _monthly_means(
-            minimum_path,
-            months,
-        )
-        monthly_maximum, maximum_latitude, maximum_longitude = _monthly_means(
-            maximum_path,
-            months,
-        )
+    monthly_minimum, latitude, longitude = _monthly_means(
+        minimum_path,
+        months,
+    )
+    monthly_maximum, maximum_latitude, maximum_longitude = _monthly_means(
+        maximum_path,
+        months,
+    )
 
     if not np.array_equal(latitude, maximum_latitude) or not np.array_equal(
         longitude,
@@ -229,19 +224,82 @@ def reduce_year(
     return summary
 
 
+def reduce_year(
+    year: int,
+    output: Path,
+    summary_output: Path | None = None,
+    *,
+    months: tuple[int, ...] = tuple(range(1, 13)),
+    api_token: str | None = None,
+) -> dict[str, object]:
+    """Compatibility path that downloads both inputs synchronously."""
+    _validate_period(year, months)
+    token = api_token or os.environ.get("CDS_API_TOKEN")
+    if not token:
+        raise RuntimeError("CDS_API_TOKEN is not set")
+
+    with tempfile.TemporaryDirectory(prefix=f"era5-land-{year}-") as directory:
+        directory_path = Path(directory)
+        minimum_path = _download_period(
+            year,
+            months,
+            "daily_minimum",
+            directory_path / "minimum.nc",
+            token,
+        )
+        maximum_path = _download_period(
+            year,
+            months,
+            "daily_maximum",
+            directory_path / "maximum.nc",
+            token,
+        )
+        return reduce_files(
+            year,
+            minimum_path,
+            maximum_path,
+            output,
+            summary_output,
+            months=months,
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--year", type=int, default=2020)
-    parser.add_argument("--months", nargs="+", type=int, default=list(range(1, 13)))
+    months_group = parser.add_mutually_exclusive_group()
+    months_group.add_argument("--months", nargs="+", type=int)
+    months_group.add_argument("--months-csv")
+    parser.add_argument("--minimum", type=Path)
+    parser.add_argument("--maximum", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--summary", type=Path)
     arguments = parser.parse_args()
-    reduce_year(
-        arguments.year,
-        arguments.output,
-        arguments.summary,
-        months=tuple(arguments.months),
+    months = (
+        tuple(arguments.months)
+        if arguments.months is not None
+        else parse_months_csv(arguments.months_csv)
+        if arguments.months_csv is not None
+        else tuple(range(1, 13))
     )
+    if (arguments.minimum is None) != (arguments.maximum is None):
+        parser.error("--minimum and --maximum must be supplied together")
+    if arguments.minimum is not None:
+        reduce_files(
+            arguments.year,
+            arguments.minimum,
+            arguments.maximum,
+            arguments.output,
+            arguments.summary,
+            months=months,
+        )
+    else:
+        reduce_year(
+            arguments.year,
+            arguments.output,
+            arguments.summary,
+            months=months,
+        )
 
 
 if __name__ == "__main__":

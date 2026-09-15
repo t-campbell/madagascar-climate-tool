@@ -1,0 +1,108 @@
+name: ERA5-Land period recovery
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: ERA5-Land year in both requests
+        required: true
+        default: "2020"
+      months:
+        description: Comma-separated months in both requests
+        required: true
+        default: "1,2,3"
+      minimum_request_id:
+        description: Successful CDS daily-minimum request ID
+        required: true
+      maximum_request_id:
+        description: Successful CDS daily-maximum request ID
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/era5-recover-period.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    name: recover ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: minimum
+            slug: minimum
+            request_id: ${{ inputs.minimum_request_id || 'ce1ae778-5999-4247-abde-a0819fc15705' }}
+          - label: maximum
+            slug: maximum
+            request_id: ${{ inputs.maximum_request_id || '89c719df-4565-48b5-8168-2ab79e403db6' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: install CDS client
+        run: python -m pip install "cdsapi>=0.7.7,<1"
+      - name: recover ${{ matrix.label }} result
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          CDS_REQUEST_ID: ${{ matrix.request_id }}
+        run: >-
+          python -m pipeline.era5_download_period recover
+          --request-id "$CDS_REQUEST_ID"
+          --output ${{ matrix.slug }}.nc
+      - name: preserve ${{ matrix.label }} result
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-raw-${{ matrix.slug }}
+          path: ${{ matrix.slug }}.nc
+          if-no-files-found: error
+          retention-days: 14
+
+  reduce:
+    name: reduce recovered period
+    needs: recover
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: era5-raw-*
+          merge-multiple: true
+      - name: install temperature pipeline
+        run: >-
+          python -m pip install
+          "numpy>=2,<3"
+          "xarray>=2025.1,<2027"
+          "netCDF4>=1.7,<2"
+      - name: reduce temperature period
+        env:
+          ERA5_YEAR: ${{ inputs.year || '2020' }}
+          ERA5_MONTHS: ${{ inputs.months || '1,2,3' }}
+        run: >-
+          python -m pipeline.era5_grid_year
+          --year "$ERA5_YEAR"
+          --months-csv "$ERA5_MONTHS"
+          --minimum minimum.nc
+          --maximum maximum.nc
+          --output era5-land-grid-period.npz
+          --summary era5-land-grid-summary.json
+      - name: validate summary
+        run: python -m json.tool era5-land-grid-summary.json
+      - name: preserve reduced period
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-land-grid-period
+          path: |
+            era5-land-grid-period.npz
+            era5-land-grid-summary.json
+          if-no-files-found: error
+          retention-days: 30

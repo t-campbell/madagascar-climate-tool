@@ -1,27 +1,25 @@
-name: ERA5-Land Madagascar split quarter benchmark
+name: ERA5-Land period submission
 
 on:
   workflow_dispatch:
     inputs:
       year:
-        description: ERA5-Land year to download
+        description: ERA5-Land year to request
         required: true
         default: "2020"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/era5-grid-year.yml"
-      - "pipeline/era5_download_period.py"
-      - "pipeline/sources.py"
+      months:
+        description: Comma-separated months, for example 1,2,3
+        required: true
+        default: "1,2,3"
 
 permissions:
   contents: read
 
 jobs:
-  download:
-    name: Q1 ${{ matrix.label }}
+  submit:
+    name: submit ${{ matrix.label }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -37,21 +35,23 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-      - name: install CDS downloader
+      - name: install CDS client
         run: python -m pip install "cdsapi>=0.7.7,<1"
-      - name: download Q1 ${{ matrix.label }} temperature
+      - name: submit ${{ matrix.label }} request
         env:
           CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          ERA5_YEAR: ${{ inputs.year }}
+          ERA5_MONTHS: ${{ inputs.months }}
         run: >-
-          python -m pipeline.era5_download_period
-          --year ${{ inputs.year || '2020' }}
-          --months 1 2 3
+          python -m pipeline.era5_download_period submit
+          --year "$ERA5_YEAR"
+          --months-csv "$ERA5_MONTHS"
           --statistic ${{ matrix.statistic }}
-          --output era5-land-q1-${{ inputs.year || '2020' }}-${{ matrix.slug }}.nc
-      - name: upload Q1 ${{ matrix.label }} temperature
+          --manifest request-${{ matrix.slug }}.json
+      - name: preserve request ID
         uses: actions/upload-artifact@v4
         with:
-          name: era5-land-q1-${{ inputs.year || '2020' }}-${{ matrix.slug }}
-          path: era5-land-q1-${{ inputs.year || '2020' }}-${{ matrix.slug }}.nc
+          name: era5-request-${{ inputs.year }}-${{ matrix.slug }}
+          path: request-${{ matrix.slug }}.json
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 30
