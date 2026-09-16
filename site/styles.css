@@ -86,6 +86,7 @@ a { color: inherit; }
 .chart .rain-bar { fill: var(--blue); }
 .chart .rain-days-line { fill: none; stroke: var(--orange); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; paint-order: stroke; }
 .chart .rain-days-dot { fill: var(--orange); stroke: var(--surface); stroke-width: 2; }
+.chart-note { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.8rem; }
 .chart .temperature-band { fill: var(--orange-soft); stroke: var(--orange); stroke-width: 1.5; }
 .chart .temperature-mid { fill: var(--orange); }
 .chart-table-wrap { overflow-x: auto; margin-top: 0.7rem; }

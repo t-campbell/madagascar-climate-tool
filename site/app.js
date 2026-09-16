@@ -1,4 +1,6 @@
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+// The 1991–2020 national CHIRPS land-cell baseline peaks at 800.1 mm/month.
+const RAIN_AXIS_MAX_MM = 1000;
 const MADAGASCAR_BOUNDS = { south: -26, north: -11, west: 43, east: 51 };
 
 const elements = {
@@ -132,7 +134,7 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
   const margin = { top: 22, right: 48, bottom: 34, left: 44 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
-  const maximum = Math.max(100, Math.ceil(Math.max(...values) / 100) * 100);
+  const maximum = RAIN_AXIS_MAX_MM;
   const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, "aria-hidden": "true" });
   const rainY = (value) => margin.top + plotHeight * (1 - value / maximum);
   const daysY = (value) => margin.top + plotHeight * (1 - value / 31);
