@@ -10,13 +10,17 @@ on:
       months:
         description: Comma-separated months in both requests
         required: true
-        default: "1,2,3"
+        default: "1,2,3,4,5,6,7,8,9,10,11,12"
       minimum_request_id:
         description: Successful CDS daily-minimum request ID
         required: true
       maximum_request_id:
         description: Successful CDS daily-maximum request ID
         required: true
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/era5-recover-period.yml"
 permissions:
   contents: read
 
@@ -31,10 +35,10 @@ jobs:
         include:
           - label: minimum
             slug: minimum
-            request_id: ${{ inputs.minimum_request_id }}
+            request_id: ${{ inputs.minimum_request_id || 'b532ee22-45de-4512-b7a0-906f6bc7b1d6' }}
           - label: maximum
             slug: maximum
-            request_id: ${{ inputs.maximum_request_id }}
+            request_id: ${{ inputs.maximum_request_id || '9ab2d386-20b2-4fdf-ab96-58e53749bc96' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -81,7 +85,7 @@ jobs:
       - name: reduce temperature period
         env:
           ERA5_YEAR: ${{ inputs.year || '2020' }}
-          ERA5_MONTHS: ${{ inputs.months || '1,2,3' }}
+          ERA5_MONTHS: ${{ inputs.months || '1,2,3,4,5,6,7,8,9,10,11,12' }}
         run: >-
           python -m pipeline.era5_grid_year
           --year "$ERA5_YEAR"
