@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#12324a">
-    <meta name="description" content="Low-bandwidth rainfall and temperature patterns for locations across Madagascar.">
+    <meta name="description" content="Low-bandwidth historical rainfall patterns for locations across Madagascar.">
     <title>Madagascar climate field guide</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
@@ -21,7 +21,7 @@
     <main id="top">
       <section class="search-panel" aria-labelledby="search-title">
         <div>
-          <p class="eyebrow">rainfall + temperature</p>
+          <p class="eyebrow">historical rainfall · 1991–2020</p>
           <h1 id="search-title">check a location in Madagascar</h1>
         </div>
 
@@ -31,7 +31,7 @@
             <input id="place-input" name="place" type="search" autocomplete="off" placeholder="try Fenerive Est or Tana" aria-describedby="search-help">
             <button type="submit">search</button>
           </div>
-          <p id="search-help" class="field-help">prototype index: three test locations</p>
+          <p id="search-help" class="field-help">start typing a place name; for an unlisted settlement, use coordinates</p>
           <div id="suggestions" class="suggestions" role="listbox" aria-label="matching places" hidden></div>
         </form>
 
@@ -52,22 +52,22 @@
         <p id="form-status" class="form-status" role="status" aria-live="polite"></p>
       </section>
 
-      <aside id="fixture-notice" class="fixture-notice" role="note">
-        <strong>demonstration data</strong>
-        <span>this build tests the interface and data contract. do not use these fixture values for planting decisions.</span>
+      <aside class="fixture-notice" role="note">
+        <strong>rainfall demo</strong>
+        <span>1991–2020 historical CHIRPS rainfall. temperature and current-season comparisons are coming later; this is not a forecast.</span>
       </aside>
 
       <section id="report" class="report" aria-live="polite" aria-busy="true">
         <header class="report-header">
           <div>
             <p class="eyebrow" id="report-region">loading location</p>
-            <h2 id="report-title">climate report</h2>
+            <h2 id="report-title">rainfall report</h2>
             <p class="coordinates" id="report-coordinates"></p>
           </div>
           <div class="freshness">
-            <span>observations through</span>
-            <strong id="report-through">loading</strong>
-            <span id="release-type"></span>
+            <span>historical baseline</span>
+            <strong>1991–2020</strong>
+            <span>CHIRPS Final</span>
           </div>
         </header>
 
@@ -81,11 +81,6 @@
             <span>highest 10-day dry-spell risk</span>
             <strong id="dry-risk">—</strong>
             <small id="dry-season">—</small>
-          </article>
-          <article class="summary-card temp-card">
-            <span>typical temperature span</span>
-            <strong id="temp-range">—</strong>
-            <small>monthly mean minimum to maximum</small>
           </article>
         </div>
 
@@ -101,38 +96,18 @@
           <p class="chart-note">rainfall axis: 0–1,000 mm at every location, so bars can be compared between reports.</p>
           <div class="chart-table-wrap">
             <table id="rain-table">
-              <caption class="visually-hidden">monthly rainfall totals, rainy-day frequency, heavy-rain-day frequency, and wet-day intensity</caption>
-              <thead><tr><th>month</th><th>mean rain</th><th>rainy days</th><th>days ≥20 mm</th><th>mean wet day</th></tr></thead>
+              <caption class="visually-hidden">monthly rainfall totals and historical range, rainy-day frequency, heavy-rain-day frequency, and wet-day intensity</caption>
+              <thead><tr><th>month</th><th>mean rain</th><th>typical range</th><th>rainy days</th><th>days ≥20 mm</th><th>mean wet day</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
-        </article>
-
-        <article class="chart-section">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">historical pattern</p>
-              <h3>temperature range</h3>
-            </div>
-            <div class="legend"><span class="temperature-key"></span>monthly min–max</div>
-          </div>
-          <div id="temperature-chart" class="chart" role="img" aria-label="monthly temperature range chart"></div>
-        </article>
-
-        <article class="current-section">
-          <div>
-            <p class="eyebrow">current season</p>
-            <h3 id="current-heading">rainfall compared with normal</h3>
-            <p id="current-copy"></p>
-          </div>
-          <div class="anomaly" id="anomaly-value">—</div>
         </article>
 
         <article class="interpretation-section">
           <p class="eyebrow">field interpretation</p>
           <h3>what the pattern suggests</h3>
           <ul id="interpretation-list"></ul>
-          <p class="caution">this describes historical climate and recent observations. it is not a forecast.</p>
+          <p class="caution">this describes historical climate, not a forecast or a planting recommendation for this season.</p>
         </article>
 
         <footer class="resolution-note">
@@ -145,10 +120,10 @@
         <p class="eyebrow">methods</p>
         <h2>what these numbers mean</h2>
         <div class="methods-grid">
-          <p><strong>rainfall:</strong> designed for CHIRPS v3 at 0.05° resolution, using a 1991–2020 baseline and nearby-cell comparison.</p>
-          <p><strong>temperature:</strong> designed for ERA5-Land at 0.1° resolution. the tool does not invent finer temperature detail.</p>
+          <p><strong>rainfall:</strong> CHIRPS Final at 0.05° resolution, using 1991–2020 data. coordinate lookups use the nearest land cell within 12 km. small areas and complex terrain may differ from the cell average.</p>
+          <p><strong>typical range:</strong> the 10th to 90th percentile of that calendar month's rainfall totals across 1991–2020. it describes past variation, not a forecast interval.</p>
           <p><strong>rain frequency:</strong> a rainy day has at least 1 mm. a heavy-rain day has at least 20 mm. both columns show the mean number of days per month across the baseline years.</p>
-          <p><strong>current season:</strong> stored separately from the baseline and labeled provisional until final source data replace it.</p>
+          <p><strong>place names:</strong> settlement search uses <a href="https://www.geonames.org/" rel="external">GeoNames</a> data (CC BY). enter coordinates if the local name is missing or ambiguous.</p>
         </div>
       </section>
     </main>

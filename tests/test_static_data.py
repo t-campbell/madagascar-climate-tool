@@ -10,31 +10,28 @@ class StaticDataTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.manifest = json.loads((ROOT / "data/manifest.json").read_text())
-        cls.places = json.loads((ROOT / "data/places.json").read_text())["places"]
+        cls.tiles = ROOT / "data/rainfall/tiles"
 
-    def test_every_place_has_a_tile_and_matching_location(self):
-        for place in self.places:
-            tile_path = ROOT / "data/tiles" / f"{place['tileId']}.json"
-            self.assertTrue(tile_path.exists(), tile_path)
-            tile = json.loads(tile_path.read_text())
-            self.assertEqual(tile["tileId"], place["tileId"])
-            ids = {location["id"] for location in tile["locations"]}
-            self.assertIn(place["id"], ids)
+    def test_national_tiles_and_place_index(self):
+        self.assertEqual(self.manifest["status"], "rainfall-baseline")
+        self.assertEqual(self.manifest["rainfall"]["validLandCells"], 22526)
+        self.assertGreater(self.manifest["gazetteer"]["placeCount"], 20000)
+        self.assertGreater(len(list(self.tiles.glob("*.json"))), 80)
+        self.assertEqual(len(list((ROOT / "data/places").glob("*.json"))), len(self.manifest["searchPrefixes"]))
+        for prefix in self.manifest["searchPrefixes"]:
+            self.assertTrue((ROOT / "data/places" / f"{prefix}.json").exists())
 
     def test_month_arrays_and_ranges(self):
-        for tile_path in (ROOT / "data/tiles").glob("*.json"):
+        for tile_path in self.tiles.glob("*.json"):
             tile = json.loads(tile_path.read_text())
-            for location in tile["locations"]:
-                rain = location["rainfall"]
-                temperature = location["temperature"]
-                for key in ("monthlyTotalMm", "rainyDays", "heavyRainDays", "wetDayIntensityMm", "drySpellRisk10d"):
-                    self.assertEqual(len(rain[key]), 12)
-                self.assertTrue(all(value >= 0 for value in rain["monthlyTotalMm"]))
-                self.assertTrue(all(heavy <= rainy for heavy, rainy in zip(rain["heavyRainDays"], rain["rainyDays"])))
-                self.assertTrue(all(0 <= value <= 1 for value in rain["drySpellRisk10d"]))
-                self.assertEqual(len(temperature["monthlyMinC"]), 12)
-                self.assertEqual(len(temperature["monthlyMaxC"]), 12)
-                self.assertTrue(all(low <= high for low, high in zip(temperature["monthlyMinC"], temperature["monthlyMaxC"])))
+            self.assertEqual(tile["id"], tile_path.stem)
+            for cell in tile["cells"]:
+                self.assertEqual(len(cell), 9)
+                self.assertTrue(all(len(values) == 12 for values in cell[2:]))
+                self.assertTrue(all(value >= 0 for value in cell[2]))
+                self.assertTrue(all(low <= high for low, high in zip(cell[3], cell[4])))
+                self.assertTrue(all(heavy <= rainy + 0.1 for heavy, rainy in zip(cell[6], cell[5])))
+                self.assertTrue(all(0 <= value <= 1 for value in cell[8]))
 
     def test_static_source_budget(self):
         total = sum(path.stat().st_size for path in (ROOT / "site").glob("*.*"))
@@ -43,4 +40,3 @@ class StaticDataTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

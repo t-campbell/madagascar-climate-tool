@@ -65,7 +65,7 @@ a { color: inherit; }
 .coordinates { margin-bottom: 0; color: var(--muted); }
 .freshness { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-end; color: var(--muted); font-size: 0.78rem; }
 .freshness strong { color: var(--ink); font-size: 1rem; }
-.summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
+.summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); border-bottom: 1px solid var(--line); }
 .summary-card { min-width: 0; padding: 1.25rem clamp(1rem, 3vw, 1.5rem); border-right: 1px solid var(--line); }
 .summary-card:last-child { border-right: 0; }
 .summary-card span, .summary-card small { display: block; color: var(--muted); }

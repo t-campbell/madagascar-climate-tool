@@ -1,4 +1,4 @@
-const CACHE_NAME = "mg-climate-prototype-v4";
+const CACHE_NAME = "mg-climate-rainfall-v1";
 const CORE_ASSETS = [
   "./",
   "index.html",
@@ -6,7 +6,6 @@ const CORE_ASSETS = [
   "app.js",
   "favicon.svg",
   "data/manifest.json",
-  "data/places.json",
 ];
 
 self.addEventListener("install", (event) => {

@@ -14,25 +14,19 @@ const elements = {
   reportRegion: document.querySelector("#report-region"),
   reportTitle: document.querySelector("#report-title"),
   reportCoordinates: document.querySelector("#report-coordinates"),
-  reportThrough: document.querySelector("#report-through"),
-  releaseType: document.querySelector("#release-type"),
   annualRain: document.querySelector("#annual-rain"),
   rainSeason: document.querySelector("#rain-season"),
   dryRisk: document.querySelector("#dry-risk"),
   drySeason: document.querySelector("#dry-season"),
-  tempRange: document.querySelector("#temp-range"),
   rainChart: document.querySelector("#rain-chart"),
-  temperatureChart: document.querySelector("#temperature-chart"),
   rainTableBody: document.querySelector("#rain-table tbody"),
-  currentCopy: document.querySelector("#current-copy"),
-  anomalyValue: document.querySelector("#anomaly-value"),
   interpretationList: document.querySelector("#interpretation-list"),
   cellDetails: document.querySelector("#cell-details"),
   offlineStatus: document.querySelector("#offline-status"),
 };
 
 let manifest;
-let places = [];
+const placeShards = new Map();
 
 function normalizeText(value) {
   return value
@@ -55,40 +49,68 @@ function withinMadagascar(lat, lon) {
   return lat >= MADAGASCAR_BOUNDS.south && lat <= MADAGASCAR_BOUNDS.north && lon >= MADAGASCAR_BOUNDS.west && lon <= MADAGASCAR_BOUNDS.east;
 }
 
-function distanceSquared(aLat, aLon, bLat, bLon) {
-  const latitudeScale = Math.cos(((aLat + bLat) / 2) * Math.PI / 180);
-  return (aLat - bLat) ** 2 + ((aLon - bLon) * latitudeScale) ** 2;
+function distanceKm(aLat, aLon, bLat, bLon) {
+  const rad = Math.PI / 180;
+  const a = Math.sin((bLat - aLat) * rad / 2) ** 2
+    + Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin((bLon - aLon) * rad / 2) ** 2;
+  return 12742 * Math.asin(Math.sqrt(a));
 }
 
 async function loadTile(tileId) {
   const path = manifest.tileTemplate.replace("{tileId}", tileId);
   const response = await fetch(path);
-  if (!response.ok) throw new Error(`No prototype tile is available for ${tileId}.`);
+  if (!response.ok) throw new Error("No CHIRPS land cell is available near those coordinates.");
   return response.json();
 }
 
-async function loadCoordinate(lat, lon, preferredId = null) {
+async function loadCoordinate(lat, lon, place = null) {
   if (!withinMadagascar(lat, lon)) {
     throw new Error("Those coordinates fall outside the Madagascar coverage box.");
   }
   const tileId = tileIdFor(lat, lon);
   const tile = await loadTile(tileId);
-  const location = preferredId
-    ? tile.locations.find((item) => item.id === preferredId)
-    : [...tile.locations].sort((a, b) =>
-        distanceSquared(lat, lon, a.coordinates.lat, a.coordinates.lon) -
-        distanceSquared(lat, lon, b.coordinates.lat, b.coordinates.lon)
-      )[0];
-  if (!location) throw new Error("That tile contains no prototype location.");
-  renderReport(location, { requestedLat: lat, requestedLon: lon, tileId });
+  let nearest = null;
+  for (const cell of tile.cells) {
+    const cellLat = tile.lat[cell[0]];
+    const cellLon = tile.lon[cell[1]];
+    const distance = distanceKm(lat, lon, cellLat, cellLon);
+    if (!nearest || distance < nearest.distance) nearest = { cell, lat: cellLat, lon: cellLon, distance };
+  }
+  if (!nearest || nearest.distance > manifest.maxCellDistanceKm) {
+    throw new Error("No CHIRPS land cell is within 12 km. Check the coordinates or try a nearby inland point.");
+  }
+  renderReport(nearest, { requestedLat: lat, requestedLon: lon, tileId, place });
 }
 
-function matchingPlaces(query) {
+function shardFor(query) {
+  let match = null;
+  for (let length = 3; length <= query.length; length += 1) {
+    const prefix = query.slice(0, length);
+    if (manifest.searchPrefixesSet.has(prefix)) match = prefix;
+  }
+  return match;
+}
+
+async function matchingPlaces(query) {
   const normalized = normalizeText(query);
-  if (!normalized) return [];
-  return places.filter((place) => {
-    const names = [place.name, ...place.aliases, place.district, place.region];
-    return names.some((name) => normalizeText(name).includes(normalized));
+  if (normalized.length < 3) return [];
+  const prefix = shardFor(normalized);
+  if (!prefix) return [];
+  if (!placeShards.has(prefix)) {
+    const pending = fetch(manifest.placesTemplate.replace("{prefix}", prefix))
+      .then((response) => {
+        if (!response.ok) throw new Error("Place search is temporarily unavailable.");
+        return response.json();
+      }).then((data) => data.places);
+    placeShards.set(prefix, pending);
+    pending.catch(() => placeShards.delete(prefix));
+  }
+  const places = await placeShards.get(prefix);
+  return places.filter((place) =>
+    [place.name, ...place.aliases].some((name) => normalizeText(name).startsWith(normalized))
+  ).sort((a, b) => {
+    const exact = (place) => [place.name, ...place.aliases].some((name) => normalizeText(name) === normalized);
+    return Number(exact(b)) - Number(exact(a)) || b.population - a.population || a.name.localeCompare(b.name);
   });
 }
 
@@ -103,19 +125,50 @@ function renderSuggestions(matches) {
     button.type = "button";
     button.className = "suggestion";
     button.setAttribute("role", "option");
-    button.innerHTML = `${place.name}<small>${place.district}, ${place.region}</small>`;
+    button.textContent = place.name;
+    const context = document.createElement("small");
+    context.textContent = [place.district, place.region].filter(Boolean).join(", ") || "Madagascar";
+    button.append(context);
     button.addEventListener("click", () => choosePlace(place));
     elements.suggestions.append(button);
   }
   elements.suggestions.hidden = false;
 }
 
+async function updateSuggestions() {
+  const query = elements.placeInput.value;
+  const normalized = normalizeText(query);
+  if (normalized.length < 3) {
+    renderSuggestions([]);
+    elements.formStatus.textContent = query ? "type at least three letters" : "";
+    return [];
+  }
+  if (!shardFor(normalized)) {
+    renderSuggestions([]);
+    elements.formStatus.textContent = manifest.searchPrefixes.some((prefix) => prefix.startsWith(normalized))
+      ? "keep typing to narrow the place search" : "no matching place; coordinates still work";
+    return [];
+  }
+  try {
+    const matches = await matchingPlaces(query);
+    if (elements.placeInput.value !== query) return [];
+    renderSuggestions(matches);
+    elements.formStatus.textContent = matches.length ? ""
+      : manifest.searchPrefixes.some((prefix) => prefix.startsWith(normalized))
+        ? "keep typing to narrow the place search" : "no matching place; coordinates still work";
+    return matches;
+  } catch (error) {
+    if (elements.placeInput.value === query) elements.formStatus.textContent = error.message;
+    return [];
+  }
+}
+
 async function choosePlace(place) {
   elements.suggestions.hidden = true;
   elements.placeInput.value = place.name;
-  elements.formStatus.textContent = "loading climate tile…";
+  elements.formStatus.textContent = "loading rainfall tile…";
   try {
-    await loadCoordinate(place.lat, place.lon, place.id);
+    await loadCoordinate(place.lat, place.lon, place);
     elements.formStatus.textContent = "";
   } catch (error) {
     elements.formStatus.textContent = error.message;
@@ -194,46 +247,7 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
   elements.rainChart.replaceChildren(svg);
 }
 
-function renderTemperatureChart(minimums, maximums) {
-  const width = 760;
-  const height = 220;
-  const margin = { top: 16, right: 12, bottom: 34, left: 44 };
-  const plotWidth = width - margin.left - margin.right;
-  const plotHeight = height - margin.top - margin.bottom;
-  const lower = Math.floor((Math.min(...minimums) - 2) / 5) * 5;
-  const upper = Math.ceil((Math.max(...maximums) + 2) / 5) * 5;
-  const y = (value) => margin.top + plotHeight - (value - lower) / (upper - lower) * plotHeight;
-  const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, "aria-hidden": "true" });
-  for (let value = lower; value <= upper; value += 5) {
-    const lineY = y(value);
-    svg.append(svgElement("line", { x1: margin.left, x2: width - margin.right, y1: lineY, y2: lineY, class: "axis" }));
-    const label = svgElement("text", { x: margin.left - 8, y: lineY + 4, "text-anchor": "end" });
-    label.textContent = `${value}°`;
-    svg.append(label);
-  }
-  const slot = plotWidth / minimums.length;
-  minimums.forEach((minimum, index) => {
-    const maximum = maximums[index];
-    const x = margin.left + index * slot + slot * 0.24;
-    const top = y(maximum);
-    const bottom = y(minimum);
-    const rect = svgElement("rect", { x, y: top, width: slot * 0.52, height: bottom - top, rx: 5, class: "temperature-band" });
-    const title = svgElement("title");
-    title.textContent = `${MONTHS[index]}: ${minimum.toFixed(1)}–${maximum.toFixed(1)} °C`;
-    rect.append(title);
-    svg.append(rect);
-    svg.append(svgElement("circle", { cx: x + slot * 0.26, cy: y((minimum + maximum) / 2), r: 2.5, class: "temperature-mid" }));
-    const label = svgElement("text", { x: margin.left + index * slot + slot / 2, y: height - 12, "text-anchor": "middle" });
-    label.textContent = MONTHS[index];
-    svg.append(label);
-  });
-  elements.temperatureChart.replaceChildren(svg);
-}
-
-function buildInterpretation(location) {
-  const rain = location.rainfall.monthlyTotalMm;
-  const risk = location.rainfall.drySpellRisk10d;
-  const heavyRainDays = location.rainfall.heavyRainDays;
+function buildInterpretation(rain, heavyRainDays, risk) {
   const annual = rain.reduce((sum, value) => sum + value, 0);
   const wetMonths = rain.filter((value) => value >= 150).length;
   const riskyMonths = risk.filter((value) => value >= 0.6).length;
@@ -246,57 +260,50 @@ function buildInterpretation(location) {
     `Days with at least 20 mm are most frequent in ${heavyMonths.join(", ")} (about ${mostHeavyDays.toFixed(1)} per month in the historical record).`
   );
   if (wetMonths >= 8) {
-    notes.push("Rain is distributed through much of the year, so drainage, disease pressure, and short rain-free work windows may matter more than annual water supply.");
+    notes.push("Rain is spread across much of the year. Drainage and workable rain-free days may be important.");
   } else if (wetMonths >= 4) {
-    notes.push("Rainfall is strongly seasonal. Establishment is generally safer during the sustained wet period than during isolated early rains.");
+    notes.push("Rainfall has a sustained wetter period. Compare rainy-day frequency and dry-spell risk before choosing a planting window.");
   } else {
-    notes.push("Reliable rain is concentrated in a short period. Water storage, drought-tolerant crops, and conservative planting decisions carry unusual weight.");
+    notes.push("Rain is concentrated in fewer months. Consider water access and dry-spell risk when planning establishment.");
   }
   if (riskyMonths >= 5) {
-    notes.push("Long dry spells are historically common for a substantial part of the year. Monthly totals alone can therefore overstate crop water reliability.");
-  } else {
-    notes.push("Ten-day dry spells are less common than in Madagascar's drier zones, but the seasonal maximum still deserves attention for germination and transplanting.");
+    notes.push("Ten-day dry spells are historically common for part of the year. Monthly totals alone can overstate water reliability.");
   }
   if (annual > 2000) {
-    notes.push("The high annual rainfall figure should not be read as uniformly benign. Nutrient leaching and saturated soil can remain binding constraints.");
+    notes.push("High annual rainfall can also bring leaching and saturated soil.");
   }
   return notes;
 }
 
-function renderReport(location, request) {
-  const rain = location.rainfall.monthlyTotalMm;
-  const dryRisk = location.rainfall.drySpellRisk10d;
-  const heavyRainDays = location.rainfall.heavyRainDays;
-  const minimums = location.temperature.monthlyMinC;
-  const maximums = location.temperature.monthlyMaxC;
+function renderReport(nearest, request) {
+  const [,, rain, p10, p90, rainyDays, heavyRainDays, wetIntensity, dryRisk] = nearest.cell;
   const wettestIndex = rain.indexOf(Math.max(...rain));
-  const driestIndex = rain.indexOf(Math.min(...rain));
   const highestRiskIndex = dryRisk.indexOf(Math.max(...dryRisk));
   const highestHeavyIndex = heavyRainDays.indexOf(Math.max(...heavyRainDays));
   const annual = rain.reduce((sum, value) => sum + value, 0);
 
-  elements.reportRegion.textContent = `${location.district}, ${location.region}`;
-  elements.reportTitle.textContent = location.name;
-  elements.reportCoordinates.textContent = `${request.requestedLat.toFixed(4)}, ${request.requestedLon.toFixed(4)} · tile ${request.tileId}`;
-  elements.reportThrough.textContent = location.current.through;
-  elements.releaseType.textContent = location.current.releaseType;
+  elements.reportRegion.textContent = request.place
+    ? [request.place.district, request.place.region].filter(Boolean).join(", ") || "Madagascar"
+    : "coordinate lookup · Madagascar";
+  elements.reportTitle.textContent = request.place ? request.place.name : "rainfall at coordinates";
+  elements.reportCoordinates.textContent = `requested: ${request.requestedLat.toFixed(4)}, ${request.requestedLon.toFixed(4)}`;
   elements.annualRain.textContent = `${Math.round(annual).toLocaleString()} mm`;
   elements.rainSeason.textContent = `wettest: ${MONTHS[wettestIndex]} · most ≥20 mm days: ${MONTHS[highestHeavyIndex]}`;
   elements.dryRisk.textContent = `${Math.round(dryRisk[highestRiskIndex] * 100)}%`;
   elements.drySeason.textContent = `highest in ${MONTHS[highestRiskIndex]}`;
-  elements.tempRange.textContent = `${Math.min(...minimums).toFixed(1)}–${Math.max(...maximums).toFixed(1)} °C`;
-  elements.currentCopy.textContent = `${location.current.yearToDateRainMm.toLocaleString()} mm observed versus ${location.current.normalToDateRainMm.toLocaleString()} mm for the matching normal period.`;
-  elements.anomalyValue.textContent = `${location.current.anomalyPercent > 0 ? "+" : ""}${location.current.anomalyPercent.toFixed(1)}%`;
-  elements.cellDetails.textContent = `rain cell ${location.cells.rain.resolutionDegrees}° centered at ${location.cells.rain.lat}, ${location.cells.rain.lon}; temperature cell ${location.cells.temperature.resolutionDegrees}° centered at ${location.cells.temperature.lat}, ${location.cells.temperature.lon}.`;
+  elements.cellDetails.textContent = `nearest CHIRPS 0.05° cell: ${nearest.lat.toFixed(4)}, ${nearest.lon.toFixed(4)} (${nearest.distance.toFixed(1)} km from requested point). 1991–2020 normal.`;
 
-  renderRainChart(rain, location.rainfall.rainyDays, heavyRainDays);
-  renderTemperatureChart(minimums, maximums);
+  renderRainChart(rain, rainyDays, heavyRainDays);
   elements.rainTableBody.replaceChildren(...MONTHS.map((month, index) => {
     const row = document.createElement("tr");
-    row.innerHTML = `<td>${month}</td><td>${rain[index]} mm</td><td>${location.rainfall.rainyDays[index]}</td><td>${heavyRainDays[index]}</td><td>${location.rainfall.wetDayIntensityMm[index]} mm</td>`;
+    for (const value of [month, `${rain[index]} mm`, `${p10[index]}–${p90[index]} mm`, rainyDays[index], heavyRainDays[index], `${wetIntensity[index]} mm`]) {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.append(cell);
+    }
     return row;
   }));
-  elements.interpretationList.replaceChildren(...buildInterpretation(location).map((note) => {
+  elements.interpretationList.replaceChildren(...buildInterpretation(rain, heavyRainDays, dryRisk).map((note) => {
     const item = document.createElement("li");
     item.textContent = note;
     return item;
@@ -304,12 +311,11 @@ function renderReport(location, request) {
   elements.report.setAttribute("aria-busy", "false");
 }
 
-elements.placeInput.addEventListener("input", () => renderSuggestions(matchingPlaces(elements.placeInput.value)));
+elements.placeInput.addEventListener("input", updateSuggestions);
 elements.placeForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const matches = matchingPlaces(elements.placeInput.value);
+  const matches = await updateSuggestions();
   if (!matches.length) {
-    elements.formStatus.textContent = "No matching prototype place. Try Fenerive Est, Tana, or Toliara.";
     return;
   }
   await choosePlace(matches[0]);
@@ -325,7 +331,7 @@ elements.coordinateForm.addEventListener("submit", async (event) => {
     await loadCoordinate(lat, lon);
     elements.formStatus.textContent = "";
   } catch (error) {
-    elements.formStatus.textContent = `${error.message} The national data layer will fill this gap.`;
+    elements.formStatus.textContent = error.message;
   }
 });
 
@@ -343,7 +349,7 @@ elements.locationButton.addEventListener("click", () => {
         await loadCoordinate(coords.latitude, coords.longitude);
         elements.formStatus.textContent = "";
       } catch (error) {
-        elements.formStatus.textContent = `${error.message} The national data layer will fill this gap.`;
+        elements.formStatus.textContent = error.message;
       }
     },
     () => { elements.formStatus.textContent = "Location was unavailable. Coordinates can still be entered manually."; },
@@ -354,19 +360,19 @@ elements.locationButton.addEventListener("click", () => {
 async function initialize() {
   try {
     const manifestResponse = await fetch("data/manifest.json");
+    if (!manifestResponse.ok) throw new Error("rainfall manifest unavailable");
     manifest = await manifestResponse.json();
-    const placesResponse = await fetch(manifest.places);
-    const placeData = await placesResponse.json();
-    places = placeData.places;
-    await choosePlace(places[0]);
+    if (manifest.status !== "rainfall-baseline") throw new Error("unexpected rainfall data version");
+    manifest.searchPrefixesSet = new Set(manifest.searchPrefixes);
+    await loadCoordinate(manifest.defaultLocation.lat, manifest.defaultLocation.lon, manifest.defaultLocation);
   } catch (error) {
-    elements.formStatus.textContent = `The prototype data could not load: ${error.message}`;
+    elements.formStatus.textContent = `Rainfall data could not load: ${error.message}`;
     elements.report.setAttribute("aria-busy", "false");
   }
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js")
-      .then(() => { elements.offlineStatus.textContent = "offline cache ready"; })
+      .then(() => { elements.offlineStatus.textContent = "visited places available offline"; })
       .catch(() => { elements.offlineStatus.textContent = "offline cache unavailable"; });
   } else {
     elements.offlineStatus.textContent = "offline cache unsupported";

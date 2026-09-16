@@ -1,26 +1,25 @@
 # Methodology contract
 
-Status: draft for review
+Status: rainfall demo released; temperature and current season planned
 
-Version: 0.2.0
+Version: 0.3.0-rainfall-demo
 
 ## Product boundary
 
-The tool describes historical climate patterns and recent observed departures from those patterns. It is not a weather forecast, seasonal forecast, crop model, or guarantee of planting success.
+This release describes historical rainfall patterns from 1991–2020. It is not a weather forecast, seasonal forecast, crop model, or guarantee of planting success. Temperature and recent observations are planned.
 
 ## Sources
 
 - Rainfall: CHIRPS v3.
 - Temperature: ERA5-Land two-metre air temperature.
-- Settlement lookup: a versioned Madagascar gazetteer distributed with the site.
+- Settlement lookup: GeoNames MG country dump, CC BY, distributed as on-demand prefix files; [GeoNames attribution](https://www.geonames.org/).
 
 ## Spatial handling
 
 - Rainfall is retained at its native 0.05 degree grid.
 - Temperature is retained at its native 0.1 degree grid.
-- The entered coordinate is mapped independently to the nearest rainfall and temperature grid cells.
-- Rainfall summaries report both the nearest cell and a 3 by 3 cell neighborhood where the metric supports aggregation.
-- Geographic transport tiles are 1 degree by 1 degree and include a one-cell halo. Tile boundaries must not change reported results.
+- The entered coordinate is mapped to the nearest CHIRPS land cell, at most 12 km away.
+- Geographic transport tiles are 1 degree by 1 degree and include a 0.15 degree halo. Tile boundaries must not change reported results.
 - The interface reports source resolution and distance to the selected cell center. It does not describe interpolated temperature as higher-resolution data.
 
 ## Reference period
@@ -37,7 +36,7 @@ The tool describes historical climate patterns and recent observed departures fr
 - Heavy-rain day: daily rainfall greater than or equal to 20 mm (the ETCCDI R20mm threshold).
 - Heavy-rain-day frequency: mean count of heavy-rain days per month across complete years.
 - Wet-day intensity: mean daily rainfall among rainy days (the ETCCDI simple daily intensity index, SDII).
-- Monthly variability: 10th, 50th, and 90th percentiles of monthly totals across complete years.
+- Monthly variability shown: 10th and 90th percentiles of monthly totals across complete years.
 - Dry spell: consecutive days with rainfall below 1.0 mm.
 - Dry-spell risk: proportion of complete years in which a dry spell of the stated length begins or continues within the reporting period.
 
@@ -81,4 +80,3 @@ The first operational candidate must be checked at:
 - Should agricultural interpretations remain national and general, or be region-specific?
 - Should CHIRPS Preliminary appear by default or only behind a provisional-data control?
 - Which languages are required at launch?
-
