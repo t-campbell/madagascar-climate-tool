@@ -17,6 +17,10 @@ on:
       maximum_request_id:
         description: Successful CDS daily-maximum request ID
         required: true
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/era5-recover-period.yml"
 permissions:
   contents: read
 
@@ -31,10 +35,10 @@ jobs:
         include:
           - label: minimum
             slug: minimum
-            request_id: ${{ inputs.minimum_request_id }}
+            request_id: ${{ inputs.minimum_request_id || '6b5a0f28-1345-41dc-af98-91bb204b4019' }}
           - label: maximum
             slug: maximum
-            request_id: ${{ inputs.maximum_request_id }}
+            request_id: ${{ inputs.maximum_request_id || 'f8243025-1bb0-4f63-b84f-bd6ed1ec7607' }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v6
@@ -80,7 +84,7 @@ jobs:
           "netCDF4>=1.7,<2"
       - name: reduce temperature period
         env:
-          ERA5_YEARS: ${{ inputs.years || '1991' }}
+          ERA5_YEARS: ${{ inputs.years || '1992' }}
           ERA5_MONTHS: ${{ inputs.months || '1,2,3,4,5,6,7,8,9,10,11,12' }}
         run: >-
           python -m pipeline.era5_grid_period
