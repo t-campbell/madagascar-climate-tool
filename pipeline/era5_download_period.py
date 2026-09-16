@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 
 from pipeline.era5_land import CDS_API_URL
-from pipeline.sources import era5_land_period_request
+from pipeline.sources import era5_land_multi_year_request, era5_land_period_request
 
 
 READY_STATUS = "successful"
@@ -28,6 +28,19 @@ def parse_months_csv(value: str) -> tuple[int, ...]:
     if not months:
         raise ValueError("at least one month is required")
     return months
+
+
+def parse_years_csv(value: str) -> tuple[int, ...]:
+    """Parse and validate a sorted comma-separated year list."""
+    try:
+        years = tuple(int(part.strip()) for part in value.split(",") if part.strip())
+    except ValueError as error:
+        raise ValueError("years must be comma-separated integers") from error
+    if not years:
+        raise ValueError("at least one year is required")
+    if len(years) != len(set(years)) or tuple(sorted(years)) != years:
+        raise ValueError("years must be unique and sorted")
+    return years
 
 
 def _api_token(api_token: str | None) -> str:
@@ -69,7 +82,27 @@ def submit_period(
     client=None,
 ) -> dict[str, object]:
     """Submit without blocking and preserve the request ID for later recovery."""
-    dataset, request = era5_land_period_request(year, months, statistic)
+    return submit_years(
+        (year,),
+        months,
+        statistic,
+        manifest_output,
+        api_token=api_token,
+        client=client,
+    )
+
+
+def submit_years(
+    years: tuple[int, ...],
+    months: tuple[int, ...],
+    statistic: str,
+    manifest_output: Path,
+    *,
+    api_token: str | None = None,
+    client=None,
+) -> dict[str, object]:
+    """Submit one multi-year request without waiting for CDS processing."""
+    dataset, request = era5_land_multi_year_request(years, months, statistic)
     active_client = client or _client(
         _api_token(api_token),
         wait_until_complete=False,
@@ -79,10 +112,12 @@ def submit_period(
         "dataset": dataset,
         "requestId": remote.request_id,
         "statusAtSubmission": remote.status,
-        "year": year,
+        "years": list(years),
         "months": list(months),
         "statistic": statistic,
     }
+    if len(years) == 1:
+        manifest["year"] = years[0]
     _write_manifest(manifest, manifest_output)
     print(json.dumps(manifest, sort_keys=True))
     return manifest
@@ -149,7 +184,9 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     submit = subparsers.add_parser("submit")
-    submit.add_argument("--year", type=int, required=True)
+    submit_years_group = submit.add_mutually_exclusive_group(required=True)
+    submit_years_group.add_argument("--year", type=int)
+    submit_years_group.add_argument("--years-csv")
     submit_months = submit.add_mutually_exclusive_group(required=True)
     submit_months.add_argument("--months", nargs="+", type=int)
     submit_months.add_argument("--months-csv")
@@ -166,13 +203,18 @@ def main() -> None:
 
     arguments = parser.parse_args()
     if arguments.command == "submit":
+        years = (
+            (arguments.year,)
+            if arguments.year is not None
+            else parse_years_csv(arguments.years_csv)
+        )
         months = (
             tuple(arguments.months)
             if arguments.months is not None
             else parse_months_csv(arguments.months_csv)
         )
-        submit_period(
-            arguments.year,
+        submit_years(
+            years,
             months,
             arguments.statistic,
             arguments.manifest,

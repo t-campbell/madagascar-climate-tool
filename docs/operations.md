@@ -14,7 +14,7 @@
 
 The active manifest is not changed when acquisition, processing, validation, or deployment fails. Users continue receiving the last verified release. The interface displays the observation date of that release.
 
-An ERA5-Land submission that outlives a GitHub runner is not resubmitted. Staff copy the preserved CDS request IDs into the period-recovery workflow after both requests show `successful` in the CDS dashboard. Recovery downloads the existing results and builds the reduced partial without repeating the data request.
+An ERA5-Land submission that outlives a GitHub runner is not resubmitted. The historical baseline is submitted in five-year blocks, with one request each for daily minimum and maximum temperature. Staff copy the preserved CDS request IDs into the period-recovery workflow after both requests show `successful` in the CDS dashboard. Recovery downloads the existing results and splits them into independently mergeable annual partials without repeating the data request.
 
 ## Rollback
 

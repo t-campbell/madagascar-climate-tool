@@ -3,10 +3,10 @@ name: ERA5-Land period recovery
 on:
   workflow_dispatch:
     inputs:
-      year:
-        description: ERA5-Land year in both requests
+      years:
+        description: Comma-separated ERA5-Land years in both requests
         required: true
-        default: "2020"
+        default: "1991,1992,1993,1994,1995"
       months:
         description: Comma-separated months in both requests
         required: true
@@ -80,24 +80,24 @@ jobs:
           "netCDF4>=1.7,<2"
       - name: reduce temperature period
         env:
-          ERA5_YEAR: ${{ inputs.year || '2020' }}
+          ERA5_YEARS: ${{ inputs.years || '1991,1992,1993,1994,1995' }}
           ERA5_MONTHS: ${{ inputs.months || '1,2,3,4,5,6,7,8,9,10,11,12' }}
         run: >-
-          python -m pipeline.era5_grid_year
-          --year "$ERA5_YEAR"
+          python -m pipeline.era5_grid_period
+          --years-csv "$ERA5_YEARS"
           --months-csv "$ERA5_MONTHS"
           --minimum minimum.nc
           --maximum maximum.nc
-          --output era5-land-grid-period.npz
-          --summary era5-land-grid-summary.json
+          --output-directory era5-land-grid-partials
+          --manifest era5-land-grid-partials.json
       - name: validate summary
-        run: python -m json.tool era5-land-grid-summary.json
+        run: python -m json.tool era5-land-grid-partials.json
       - name: preserve reduced period
         uses: actions/upload-artifact@v4
         with:
-          name: era5-land-grid-period
+          name: era5-land-grid-partials
           path: |
-            era5-land-grid-period.npz
-            era5-land-grid-summary.json
+            era5-land-grid-partials/
+            era5-land-grid-partials.json
           if-no-files-found: error
           retention-days: 30

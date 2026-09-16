@@ -44,7 +44,11 @@ def _download_period(
     return destination
 
 
-def _monthly_means(source: Path, selected_months: tuple[int, ...]):
+def _monthly_means(
+    source: Path,
+    selected_months: tuple[int, ...],
+    selected_year: int | None = None,
+):
     import numpy as np
     import xarray as xr
 
@@ -58,13 +62,22 @@ def _monthly_means(source: Path, selected_months: tuple[int, ...]):
         if set(data.dims) != expected_dimensions:
             raise ValueError(f"unexpected ERA5-Land dimensions: {data.dims}")
         data = data.transpose(time_name, latitude_name, longitude_name)
+        available_years = np.asarray(data[time_name].dt.year.values)
+        if selected_year is None:
+            unique_years = np.unique(available_years)
+            if len(unique_years) != 1:
+                raise ValueError(
+                    "ERA5-Land input spans multiple years; select one year"
+                )
+            selected_year = int(unique_years[0])
+        data = data.isel({time_name: available_years == selected_year})
         values = _to_celsius_array(
             np.asarray(data.values, dtype=np.float32),
             data.attrs.get("units"),
         )
         months = np.asarray(data[time_name].dt.month.values)
         expected_days = sum(
-            calendar.monthrange(int(data[time_name].dt.year.values[0]), month)[1]
+            calendar.monthrange(selected_year, month)[1]
             for month in selected_months
         )
         if values.shape[0] != expected_days:
@@ -166,10 +179,12 @@ def reduce_files(
     monthly_minimum, latitude, longitude = _monthly_means(
         minimum_path,
         months,
+        year,
     )
     monthly_maximum, maximum_latitude, maximum_longitude = _monthly_means(
         maximum_path,
         months,
+        year,
     )
 
     if not np.array_equal(latitude, maximum_latitude) or not np.array_equal(

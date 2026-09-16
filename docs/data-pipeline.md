@@ -26,9 +26,9 @@ The build must be resumable. Completed years are content-addressed and do not re
 
 ## Temperature bootstrap
 
-The pipeline requests ERA5-Land post-processed daily minimum and maximum 2 m temperature from the Copernicus Climate Data Store. Requests are cropped to the Madagascar bounding box and split by month or year to remain retryable. Daily statistics use Madagascar local time, UTC+03:00.
+The pipeline requests ERA5-Land post-processed daily minimum and maximum 2 m temperature from the Copernicus Climate Data Store. Requests are cropped to the Madagascar bounding box. The historical bootstrap uses five-year request blocks to avoid flooding the CDS queue while keeping failures bounded. Daily statistics use Madagascar local time, UTC+03:00.
 
-CDS requests are asynchronous. The submission workflow records each request ID and exits rather than occupying a GitHub runner while CDS queues the work. After CDS reports success, the recovery workflow reopens those request IDs, downloads minimum and maximum independently, validates the paired grids, and emits a reduced yearly partial. A GitHub timeout therefore cannot discard a completed CDS job.
+CDS requests are asynchronous. The submission workflow records each request ID and exits rather than occupying a GitHub runner while CDS queues the work. After CDS reports success, the recovery workflow reopens those request IDs, downloads minimum and maximum independently, validates the paired grids, and splits each five-year block into reduced yearly partials. A GitHub timeout therefore cannot discard a completed CDS job.
 
 Thirty complete yearly partials are merged into the 1991-2020 temperature normal. Raw NetCDF files remain temporary artifacts; the normal retains only monthly mean daily minima and monthly mean daily maxima on the native 0.1 degree grid.
 

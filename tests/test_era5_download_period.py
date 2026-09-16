@@ -6,8 +6,10 @@ import unittest
 from pipeline.era5_download_period import (
     RequestNotReadyError,
     parse_months_csv,
+    parse_years_csv,
     recover_request,
     submit_period,
+    submit_years,
 )
 
 
@@ -50,6 +52,13 @@ class Era5DownloadPeriodTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_months_csv("1,banana,3")
 
+    def test_year_csv_is_parsed_for_block_workflows(self):
+        self.assertEqual(parse_years_csv("1991, 1992,1993"), (1991, 1992, 1993))
+
+    def test_unsorted_year_csv_is_rejected(self):
+        with self.assertRaises(ValueError):
+            parse_years_csv("1992,1991")
+
     def test_submit_writes_resumable_manifest(self):
         remote = FakeRemote()
         client = FakeClient(remote)
@@ -68,6 +77,25 @@ class Era5DownloadPeriodTests(unittest.TestCase):
         self.assertEqual(saved, manifest)
         self.assertEqual(saved["months"], [1, 2, 3])
         self.assertEqual(client.submission[0], "derived-era5-land-daily-statistics")
+
+    def test_submit_writes_multi_year_manifest(self):
+        remote = FakeRemote()
+        client = FakeClient(remote)
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = submit_years(
+                (1991, 1992, 1993, 1994, 1995),
+                tuple(range(1, 13)),
+                "daily_minimum",
+                Path(directory) / "request.json",
+                client=client,
+            )
+
+        self.assertEqual(manifest["years"], [1991, 1992, 1993, 1994, 1995])
+        self.assertNotIn("year", manifest)
+        self.assertEqual(
+            client.submission[1]["year"],
+            ["1991", "1992", "1993", "1994", "1995"],
+        )
 
     def test_recover_downloads_successful_request(self):
         remote = FakeRemote(status="successful", payload=b"netcdf")

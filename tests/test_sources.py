@@ -4,6 +4,7 @@ import unittest
 from pipeline.sources import (
     chirps_daily_url,
     era5_land_daily_request,
+    era5_land_multi_year_request,
     era5_land_period_request,
     era5_land_year_request,
 )
@@ -50,7 +51,26 @@ class SourceRequestTests(unittest.TestCase):
         self.assertEqual(request["month"], [f"{month:02d}" for month in range(1, 13)])
         self.assertEqual(request["area"], [-10.9, 42.9, -26.1, 51.1])
 
+    def test_era5_multi_year_request_uses_one_bounded_job(self):
+        _, request = era5_land_multi_year_request(
+            (1991, 1992, 1993, 1994, 1995),
+            tuple(range(1, 13)),
+            "daily_maximum",
+        )
+        self.assertEqual(
+            request["year"],
+            ["1991", "1992", "1993", "1994", "1995"],
+        )
+        self.assertEqual(request["area"], [-10.9, 42.9, -26.1, 51.1])
+
+    def test_era5_multi_year_request_rejects_unsorted_years(self):
+        with self.assertRaises(ValueError):
+            era5_land_multi_year_request(
+                (1992, 1991),
+                (1,),
+                "daily_minimum",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -3,10 +3,10 @@ name: ERA5-Land period submission
 on:
   workflow_dispatch:
     inputs:
-      year:
-        description: ERA5-Land year to request
+      years:
+        description: Comma-separated ERA5-Land years to request
         required: true
-        default: "2020"
+        default: "1991,1992,1993,1994,1995"
       months:
         description: Comma-separated months, for example 1,2,3
         required: true
@@ -39,18 +39,18 @@ jobs:
       - name: submit ${{ matrix.label }} request
         env:
           CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
-          ERA5_YEAR: ${{ inputs.year || '2020' }}
+          ERA5_YEARS: ${{ inputs.years || '1991,1992,1993,1994,1995' }}
           ERA5_MONTHS: ${{ inputs.months || '1,2,3,4,5,6,7,8,9,10,11,12' }}
         run: >-
           python -m pipeline.era5_download_period submit
-          --year "$ERA5_YEAR"
+          --years-csv "$ERA5_YEARS"
           --months-csv "$ERA5_MONTHS"
           --statistic ${{ matrix.statistic }}
           --manifest request-${{ matrix.slug }}.json
       - name: preserve request ID
         uses: actions/upload-artifact@v4
         with:
-          name: era5-request-${{ inputs.year || '2020' }}-${{ matrix.slug }}
+          name: era5-request-period-${{ matrix.slug }}
           path: request-${{ matrix.slug }}.json
           if-no-files-found: error
           retention-days: 30
