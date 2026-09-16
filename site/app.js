@@ -128,20 +128,25 @@ function svgElement(name, attributes = {}) {
 
 function renderRainChart(values, rainyDays, heavyRainDays) {
   const width = 760;
-  const height = 230;
-  const margin = { top: 12, right: 12, bottom: 34, left: 44 };
+  const height = 250;
+  const margin = { top: 22, right: 48, bottom: 34, left: 44 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
-  const maximum = Math.ceil(Math.max(...values) / 100) * 100;
+  const maximum = Math.max(100, Math.ceil(Math.max(...values) / 100) * 100);
   const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, "aria-hidden": "true" });
+  const rainY = (value) => margin.top + plotHeight * (1 - value / maximum);
+  const daysY = (value) => margin.top + plotHeight * (1 - value / 31);
 
   for (let tick = 0; tick <= 4; tick += 1) {
     const value = maximum * tick / 4;
-    const y = margin.top + plotHeight - plotHeight * tick / 4;
+    const y = rainY(value);
     svg.append(svgElement("line", { x1: margin.left, x2: width - margin.right, y1: y, y2: y, class: "axis" }));
     const label = svgElement("text", { x: margin.left - 8, y: y + 4, "text-anchor": "end" });
     label.textContent = `${Math.round(value)}`;
     svg.append(label);
+    const dayLabel = svgElement("text", { x: width - margin.right + 8, y: y + 4 });
+    dayLabel.textContent = `${Math.round(31 * tick / 4)}`;
+    svg.append(dayLabel);
   }
 
   const slot = plotWidth / values.length;
@@ -149,7 +154,7 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
     const barHeight = value / maximum * plotHeight;
     const rect = svgElement("rect", {
       x: margin.left + index * slot + slot * 0.16,
-      y: margin.top + plotHeight - barHeight,
+      y: rainY(value),
       width: slot * 0.68,
       height: barHeight,
       rx: 2,
@@ -163,9 +168,27 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
     label.textContent = MONTHS[index];
     svg.append(label);
   });
-  const unit = svgElement("text", { x: 8, y: 12 });
-  unit.textContent = "mm";
-  svg.append(unit);
+  const points = rainyDays.map((days, index) => ({
+    x: margin.left + (index + 0.5) * slot,
+    y: daysY(days),
+  }));
+  svg.append(svgElement("polyline", {
+    points: points.map(({ x, y }) => `${x},${y}`).join(" "),
+    class: "rain-days-line",
+  }));
+  points.forEach(({ x, y }, index) => {
+    const dot = svgElement("circle", { cx: x, cy: y, r: 4, class: "rain-days-dot" });
+    const title = svgElement("title");
+    title.textContent = `${MONTHS[index]}: ${rainyDays[index]} days with ≥1 mm rain; ${values[index]} mm total`;
+    dot.append(title);
+    svg.append(dot);
+  });
+  const rainUnit = svgElement("text", { x: margin.left - 8, y: 13, "text-anchor": "end" });
+  rainUnit.textContent = "mm";
+  svg.append(rainUnit);
+  const daysUnit = svgElement("text", { x: width - margin.right + 8, y: 13 });
+  daysUnit.textContent = "days";
+  svg.append(daysUnit);
   elements.rainChart.replaceChildren(svg);
 }
 
@@ -349,4 +372,3 @@ async function initialize() {
 }
 
 initialize();
-

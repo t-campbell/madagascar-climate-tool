@@ -1,4 +1,4 @@
-const CACHE_NAME = "mg-climate-prototype-v2";
+const CACHE_NAME = "mg-climate-prototype-v3";
 const CORE_ASSETS = [
   "./",
   "index.html",
@@ -38,4 +38,3 @@ self.addEventListener("fetch", (event) => {
     })
   );
 });
-

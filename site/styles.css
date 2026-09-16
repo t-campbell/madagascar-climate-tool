@@ -75,14 +75,17 @@ a { color: inherit; }
 .temp-card { box-shadow: inset 0 4px 0 var(--orange); }
 .chart-section, .interpretation-section, .methods { padding: clamp(1.4rem, 4vw, 2.4rem); border-bottom: 1px solid var(--line); }
 .section-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 1rem; }
-.legend { color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+.legend { color: var(--muted); font-size: 0.8rem; }
 .rain-key, .temperature-key { display: inline-block; width: 12px; height: 12px; margin-right: 0.4rem; vertical-align: -1px; background: var(--blue); }
+.rain-days-key { display: inline-block; width: 16px; height: 3px; margin: 0 0.4rem 3px 0.85rem; background: var(--orange); }
 .temperature-key { background: var(--orange); }
 .chart { min-height: 220px; width: 100%; overflow: hidden; }
 .chart svg { display: block; width: 100%; height: auto; }
 .chart text { fill: var(--muted); font-family: inherit; font-size: 11px; }
 .chart .axis { stroke: var(--line); stroke-width: 1; }
 .chart .rain-bar { fill: var(--blue); }
+.chart .rain-days-line { fill: none; stroke: var(--orange); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; paint-order: stroke; }
+.chart .rain-days-dot { fill: var(--orange); stroke: var(--surface); stroke-width: 2; }
 .chart .temperature-band { fill: var(--orange-soft); stroke: var(--orange); stroke-width: 1.5; }
 .chart .temperature-mid { fill: var(--orange); }
 .chart-table-wrap { overflow-x: auto; margin-top: 0.7rem; }
@@ -145,4 +148,3 @@ th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-
   .report { border: 0; }
   .chart-section, .interpretation-section { break-inside: avoid; }
 }
-
