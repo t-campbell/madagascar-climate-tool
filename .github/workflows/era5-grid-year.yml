@@ -6,7 +6,7 @@ on:
       years:
         description: Comma-separated ERA5-Land years to request
         required: true
-        default: "1991,1992,1993,1994,1995"
+        default: "1991"
       months:
         description: Comma-separated months, for example 1,2,3
         required: true
@@ -43,7 +43,7 @@ jobs:
       - name: submit ${{ matrix.label }} request
         env:
           CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
-          ERA5_YEARS: ${{ inputs.years || '1991,1992,1993,1994,1995' }}
+          ERA5_YEARS: ${{ inputs.years || '1991' }}
           ERA5_MONTHS: ${{ inputs.months || '1,2,3,4,5,6,7,8,9,10,11,12' }}
         run: >-
           python -m pipeline.era5_download_period submit

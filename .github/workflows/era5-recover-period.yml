@@ -6,7 +6,7 @@ on:
       years:
         description: Comma-separated ERA5-Land years in both requests
         required: true
-        default: "1991,1992,1993,1994,1995"
+        default: "1991"
       months:
         description: Comma-separated months in both requests
         required: true
@@ -80,7 +80,7 @@ jobs:
           "netCDF4>=1.7,<2"
       - name: reduce temperature period
         env:
-          ERA5_YEARS: ${{ inputs.years || '1991,1992,1993,1994,1995' }}
+          ERA5_YEARS: ${{ inputs.years || '1991' }}
           ERA5_MONTHS: ${{ inputs.months || '1,2,3,4,5,6,7,8,9,10,11,12' }}
         run: >-
           python -m pipeline.era5_grid_period
