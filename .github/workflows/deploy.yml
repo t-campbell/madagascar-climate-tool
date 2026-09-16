@@ -2,6 +2,10 @@ name: deploy production
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/deploy.yml"
 
 # Keep deployment manual until the Cloudflare account and repository secrets
 # are configured. Automatic deployment can be enabled after the first
