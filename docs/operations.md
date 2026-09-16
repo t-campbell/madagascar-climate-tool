@@ -1,5 +1,17 @@
 # Operations outline
 
+## Rainfall demo now live
+
+The site currently serves the fixed 1991–2020 CHIRPS Final baseline and a GeoNames place index. There is no daily data job or CDS dependency in this demo. The live site's historical label does not advance each month. Temperature and current-season observations are future work.
+
+Check the public site after any release: search for Fenoarivo Atsinanana or enter coordinates, then confirm rainfall, rainy days, and days with at least 20 mm render. The GitHub `checks` workflow validates static data; `deploy production` publishes the existing release manually. `publish rainfall demo` regenerates the static release manually from the CHIRPS workflow artifact and the latest GeoNames dump, commits it, and deploys it. The CHIRPS artifact from run 34862522613 expires October 14, 2026; preserve a durable copy or rerun the CHIRPS baseline pipeline before attempting a later regeneration.
+
+When publishing updated data at the same file paths, increment `CACHE_NAME` in `site/sw.js` so returning visitors receive the new cached files.
+
+GitHub and Cloudflare staff administrators should monitor deployment failures and token expiration. The rainfall demo uses the GitHub Actions token and existing Cloudflare deployment secrets; the CDS token is not needed to run the site or release rainfall. The static site has no runtime account, server, or paid database.
+
+The sections below describe the planned current-season update pipeline and are not active in this rainfall demo.
+
 ## Normal update
 
 1. The scheduled workflow checks for newly available source observations.
