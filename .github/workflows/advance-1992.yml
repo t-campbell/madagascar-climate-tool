@@ -1,0 +1,92 @@
+name: advance ERA5 1992 to 1993-1994
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/advance-1992.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: minimum
+            request_id: 6b5a0f28-1345-41dc-af98-91bb204b4019
+          - label: maximum
+            request_id: f8243025-1bb0-4f63-b84f-bd6ed1ec7607
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'cdsapi>=0.7.7,<1'
+      - name: retrieve successful CDS request
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          CDS_REQUEST_ID: ${{ matrix.request_id }}
+        run: python -m pipeline.era5_download_period recover --request-id "$CDS_REQUEST_ID" --output ${{ matrix.label }}.nc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: era5-1992-raw-${{ matrix.label }}
+          path: ${{ matrix.label }}.nc
+          if-no-files-found: error
+          retention-days: 30
+
+  reduce:
+    needs: recover
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: era5-1992-raw-*
+          merge-multiple: true
+      - run: python -m pip install 'numpy>=2,<3' 'xarray>=2025.1,<2027' 'netCDF4>=1.7,<2'
+      - run: python -m pipeline.era5_grid_period --years-csv 1992 --minimum minimum.nc --maximum maximum.nc --output-directory era5-land-grid-partials --manifest era5-land-grid-partials.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: era5-1992-grid-partial
+          path: |
+            era5-land-grid-partials/
+            era5-land-grid-partials.json
+          if-no-files-found: error
+          retention-days: 90
+
+  submit_next:
+    needs: reduce
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - statistic: daily_minimum
+            label: minimum
+          - statistic: daily_maximum
+            label: maximum
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'cdsapi>=0.7.7,<1'
+      - name: submit 1993-1994 request
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+        run: python -m pipeline.era5_download_period submit --years-csv 1993,1994 --months-csv 1,2,3,4,5,6,7,8,9,10,11,12 --statistic ${{ matrix.statistic }} --manifest request-${{ matrix.label }}.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: era5-1993-1994-request-${{ matrix.label }}
+          path: request-${{ matrix.label }}.json
+          if-no-files-found: error
+          retention-days: 90
