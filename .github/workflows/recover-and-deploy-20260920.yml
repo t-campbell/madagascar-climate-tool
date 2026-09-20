@@ -1,0 +1,91 @@
+name: recover ERA5 1995-1996 and deploy chart controls
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/recover-and-deploy-20260920.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - year: 1995
+            label: minimum
+            request_id: c2c85577-77c6-4a2d-98fa-68be7f99cbd4
+          - year: 1995
+            label: maximum
+            request_id: 9a41c315-a08d-4e47-9b47-8d7fa9aa9b4e
+          - year: 1996
+            label: minimum
+            request_id: c17ab1c5-d33d-44ae-97e3-cb0b082fdf6f
+          - year: 1996
+            label: maximum
+            request_id: 67402314-07eb-4aa8-a420-84fbf0049fe3
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'cdsapi>=0.7.7,<1'
+      - name: retrieve successful CDS request
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          CDS_REQUEST_ID: ${{ matrix.request_id }}
+        run: python -m pipeline.era5_download_period recover --request-id "$CDS_REQUEST_ID" --output ${{ matrix.label }}.nc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: era5-${{ matrix.year }}-raw-${{ matrix.label }}
+          path: ${{ matrix.label }}.nc
+          if-no-files-found: error
+          retention-days: 30
+
+  reduce:
+    needs: recover
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        year: [1995, 1996]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: era5-${{ matrix.year }}-raw-*
+          merge-multiple: true
+      - run: python -m pip install 'numpy>=2,<3' 'xarray>=2025.1,<2027' 'netCDF4>=1.7,<2'
+      - run: python -m pipeline.era5_grid_period --years-csv ${{ matrix.year }} --minimum minimum.nc --maximum maximum.nc --output-directory era5-land-grid-partials --manifest era5-land-grid-partials.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: era5-${{ matrix.year }}-grid-partial
+          path: |
+            era5-land-grid-partials/
+            era5-land-grid-partials.json
+          if-no-files-found: error
+          retention-days: 90
+
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - run: npm run check
+      - run: npm run build
+      - name: deploy static assets
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -19,6 +19,9 @@ const elements = {
   dryRisk: document.querySelector("#dry-risk"),
   drySeason: document.querySelector("#dry-season"),
   rainChart: document.querySelector("#rain-chart"),
+  showRainfall: document.querySelector("#show-rainfall"),
+  showRainyDays: document.querySelector("#show-rainy-days"),
+  showHeavyDays: document.querySelector("#show-heavy-days"),
   rainTableBody: document.querySelector("#rain-table tbody"),
   interpretationList: document.querySelector("#interpretation-list"),
   cellDetails: document.querySelector("#cell-details"),
@@ -26,6 +29,7 @@ const elements = {
 };
 
 let manifest;
+let latestRainChartData = null;
 const placeShards = new Map();
 
 function normalizeText(value) {
@@ -182,6 +186,10 @@ function svgElement(name, attributes = {}) {
 }
 
 function renderRainChart(values, rainyDays, heavyRainDays) {
+  latestRainChartData = { values, rainyDays, heavyRainDays };
+  const showRainfall = elements.showRainfall.checked;
+  const showRainyDays = elements.showRainyDays.checked;
+  const showHeavyDays = elements.showHeavyDays.checked;
   const width = 760;
   const height = 250;
   const margin = { top: 22, right: 48, bottom: 34, left: 44 };
@@ -206,38 +214,57 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
 
   const slot = plotWidth / values.length;
   values.forEach((value, index) => {
-    const barHeight = value / maximum * plotHeight;
-    const rect = svgElement("rect", {
-      x: margin.left + index * slot + slot * 0.16,
-      y: rainY(value),
-      width: slot * 0.68,
-      height: barHeight,
-      rx: 2,
-      class: "rain-bar",
-    });
-    const title = svgElement("title");
-    title.textContent = `${MONTHS[index]}: ${value} mm · ${rainyDays[index]} rainy days · ${heavyRainDays[index]} days ≥20 mm`;
-    rect.append(title);
-    svg.append(rect);
+    if (showRainfall) {
+      const barWidth = showHeavyDays ? slot * 0.48 : slot * 0.68;
+      const rect = svgElement("rect", {
+        x: margin.left + index * slot + (showHeavyDays ? slot * 0.12 : slot * 0.16),
+        y: rainY(value),
+        width: barWidth,
+        height: value / maximum * plotHeight,
+        rx: 2,
+        class: "rain-bar",
+      });
+      const title = svgElement("title");
+      title.textContent = `${MONTHS[index]}: ${value} mm rainfall`;
+      rect.append(title);
+      svg.append(rect);
+    }
+    if (showHeavyDays) {
+      const barWidth = showRainfall ? slot * 0.20 : slot * 0.42;
+      const rect = svgElement("rect", {
+        x: margin.left + index * slot + (showRainfall ? slot * 0.64 : slot * 0.29),
+        y: daysY(heavyRainDays[index]),
+        width: barWidth,
+        height: heavyRainDays[index] / 31 * plotHeight,
+        rx: 2,
+        class: "heavy-days-bar",
+      });
+      const title = svgElement("title");
+      title.textContent = `${MONTHS[index]}: ${heavyRainDays[index]} days with ≥20 mm rain`;
+      rect.append(title);
+      svg.append(rect);
+    }
     const label = svgElement("text", { x: margin.left + index * slot + slot / 2, y: height - 12, "text-anchor": "middle" });
     label.textContent = MONTHS[index];
     svg.append(label);
   });
-  const points = rainyDays.map((days, index) => ({
-    x: margin.left + (index + 0.5) * slot,
-    y: daysY(days),
-  }));
-  svg.append(svgElement("polyline", {
-    points: points.map(({ x, y }) => `${x},${y}`).join(" "),
-    class: "rain-days-line",
-  }));
-  points.forEach(({ x, y }, index) => {
-    const dot = svgElement("circle", { cx: x, cy: y, r: 4, class: "rain-days-dot" });
-    const title = svgElement("title");
-    title.textContent = `${MONTHS[index]}: ${rainyDays[index]} days with ≥1 mm rain; ${values[index]} mm total`;
-    dot.append(title);
-    svg.append(dot);
-  });
+  if (showRainyDays) {
+    const points = rainyDays.map((days, index) => ({
+      x: margin.left + (index + 0.5) * slot,
+      y: daysY(days),
+    }));
+    svg.append(svgElement("polyline", {
+      points: points.map(({ x, y }) => `${x},${y}`).join(" "),
+      class: "rain-days-line",
+    }));
+    points.forEach(({ x, y }, index) => {
+      const dot = svgElement("circle", { cx: x, cy: y, r: 4, class: "rain-days-dot" });
+      const title = svgElement("title");
+      title.textContent = `${MONTHS[index]}: ${rainyDays[index]} days with ≥1 mm rain`;
+      dot.append(title);
+      svg.append(dot);
+    });
+  }
   const rainUnit = svgElement("text", { x: margin.left - 8, y: 13, "text-anchor": "end" });
   rainUnit.textContent = "mm";
   svg.append(rainUnit);
@@ -245,6 +272,20 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
   daysUnit.textContent = "days";
   svg.append(daysUnit);
   elements.rainChart.replaceChildren(svg);
+  const visible = [showRainfall && "rainfall", showRainyDays && "rainy days", showHeavyDays && "heavy-rain days"].filter(Boolean);
+  elements.rainChart.setAttribute("aria-label", visible.length
+    ? `monthly ${visible.join(", ")}; exact values are in the table below`
+    : "no chart series selected; exact values are in the table below");
+}
+
+for (const control of [elements.showRainfall, elements.showRainyDays, elements.showHeavyDays]) {
+  control.addEventListener("change", () => {
+    if (latestRainChartData) renderRainChart(
+      latestRainChartData.values,
+      latestRainChartData.rainyDays,
+      latestRainChartData.heavyRainDays,
+    );
+  });
 }
 
 function buildInterpretation(rain, heavyRainDays, risk) {

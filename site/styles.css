@@ -76,6 +76,12 @@ a { color: inherit; }
 .chart-section, .interpretation-section, .methods { padding: clamp(1.4rem, 4vw, 2.4rem); border-bottom: 1px solid var(--line); }
 .section-heading { display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 1rem; }
 .legend { color: var(--muted); font-size: 0.8rem; }
+.series-picker { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.45rem 0.8rem; margin: 0; padding: 0; border: 0; color: var(--muted); font-size: 0.8rem; }
+.series-picker label { display: inline-flex; align-items: center; gap: 0.3rem; cursor: pointer; white-space: nowrap; }
+.series-picker input { width: 1rem; height: 1rem; margin: 0; accent-color: var(--navy); }
+.series-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 2px; background: var(--blue); }
+.rainy-swatch { width: 16px; height: 3px; border-radius: 2px; background: var(--orange); }
+.heavy-swatch { background: #7551a6; }
 .rain-key, .temperature-key { display: inline-block; width: 12px; height: 12px; margin-right: 0.4rem; vertical-align: -1px; background: var(--blue); }
 .rain-days-key { display: inline-block; width: 16px; height: 3px; margin: 0 0.4rem 3px 0.85rem; background: var(--orange); }
 .temperature-key { background: var(--orange); }
@@ -84,6 +90,7 @@ a { color: inherit; }
 .chart text { fill: var(--muted); font-family: inherit; font-size: 11px; }
 .chart .axis { stroke: var(--line); stroke-width: 1; }
 .chart .rain-bar { fill: var(--blue); }
+.chart .heavy-days-bar { fill: #7551a6; }
 .chart .rain-days-line { fill: none; stroke: var(--orange); stroke-width: 3; stroke-linejoin: round; stroke-linecap: round; paint-order: stroke; }
 .chart .rain-days-dot { fill: var(--orange); stroke: var(--surface); stroke-width: 2; }
 .chart-note { margin: 0.15rem 0 0; color: var(--muted); font-size: 0.8rem; }
@@ -116,6 +123,8 @@ th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-
   .coordinate-form { grid-template-columns: 1fr 1fr; }
   .coordinate-form button { width: 100%; }
   .report-header { align-items: flex-start; }
+  .section-heading { align-items: flex-start; flex-direction: column; }
+  .series-picker { justify-content: flex-start; }
   .summary-grid { grid-template-columns: 1fr; }
   .summary-card { border-right: 0; border-bottom: 1px solid var(--line); }
   .summary-card:last-child { border-bottom: 0; }
