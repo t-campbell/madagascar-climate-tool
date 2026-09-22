@@ -1,0 +1,76 @@
+name: Advance ERA5 successful slots (one-shot)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/era5-advance-successes-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  advance:
+    name: recover ${{ matrix.recover_year }} ${{ matrix.recover_statistic }} then submit ${{ matrix.submit_year }} ${{ matrix.submit_statistic }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - recover_year: 1999
+            recover_statistic: daily_maximum
+            recover_slug: 1999-daily-maximum
+            request_id: e6f2ca75-117e-4cad-8426-11be3793b7b3
+            submit_year: 2001
+            submit_statistic: daily_minimum
+            submit_slug: 2001-daily-minimum
+          - recover_year: 2000
+            recover_statistic: daily_maximum
+            recover_slug: 2000-daily-maximum
+            request_id: 4a7976fa-724e-45d3-843d-e2b3d9a7eba7
+            submit_year: 2001
+            submit_statistic: daily_maximum
+            submit_slug: 2001-daily-maximum
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: install CDS client
+        run: python -m pip install "cdsapi>=0.7.7,<1"
+      - name: recover successful result
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          CDS_REQUEST_ID: ${{ matrix.request_id }}
+          RECOVER_SLUG: ${{ matrix.recover_slug }}
+        run: |
+          python -m pipeline.era5_download_period recover --request-id "$CDS_REQUEST_ID" --output "$RECOVER_SLUG.nc"
+          sha256sum "$RECOVER_SLUG.nc" > "$RECOVER_SLUG.sha256"
+      - name: preserve recovered raw result
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-raw-${{ matrix.recover_slug }}
+          path: |
+            ${{ matrix.recover_slug }}.nc
+            ${{ matrix.recover_slug }}.sha256
+          if-no-files-found: error
+          retention-days: 90
+      - name: submit one replacement request
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          SUBMIT_YEAR: ${{ matrix.submit_year }}
+          SUBMIT_STATISTIC: ${{ matrix.submit_statistic }}
+          SUBMIT_SLUG: ${{ matrix.submit_slug }}
+        run: >-
+          python -m pipeline.era5_download_period submit
+          --year "$SUBMIT_YEAR"
+          --months-csv "1,2,3,4,5,6,7,8,9,10,11,12"
+          --statistic "$SUBMIT_STATISTIC"
+          --manifest "$SUBMIT_SLUG.json"
+      - name: preserve request manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-request-${{ matrix.submit_slug }}
+          path: ${{ matrix.submit_slug }}.json
+          if-no-files-found: error
+          retention-days: 90
