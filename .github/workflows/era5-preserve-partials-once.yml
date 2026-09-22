@@ -1,0 +1,59 @@
+name: Preserve ERA5 annual partials release (one-shot)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/era5-preserve-partials-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  preserve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      TAG: era5-land-annual-partials-v1
+    steps:
+      - uses: actions/checkout@v7
+      - name: download exact Actions artifact archives
+        run: |
+          mkdir -p release-assets
+          gh api repos/$REPO/actions/artifacts/10434135505/zip > release-assets/era5-1991-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10482710013/zip > release-assets/era5-1992-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10578685341/zip > release-assets/era5-1993-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10578790855/zip > release-assets/era5-1994-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10597432776/zip > release-assets/era5-1995-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10598330965/zip > release-assets/era5-1996-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10682136848/zip > release-assets/era5-1997-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10682426477/zip > release-assets/era5-1998-grid-partial.actions-artifact.zip
+          gh api repos/$REPO/actions/artifacts/10428494702/zip > release-assets/era5-2020-grid-partial.actions-artifact.zip
+          (cd release-assets && sha256sum *.zip > SHA256SUMS)
+          cat > release-assets/SOURCES.md <<'EOF'
+          # ERA5-Land reduced annual partial sources
+
+          Versioned preservation copy of validated reduced annual partials. Each ZIP is the exact GitHub Actions artifact archive downloaded through the Actions API.
+
+          | Year | Source run | Source artifact ID |
+          | --- | --- | --- |
+          | 1991 | 35064582199 | 10434135505 |
+          | 1992 | 35185606127 | 10482710013 |
+          | 1993 | 35423067331 | 10578685341 |
+          | 1994 | 35423067331 | 10578790855 |
+          | 1995 | 35486816357 | 10597432776 |
+          | 1996 | 35486816357 | 10598330965 |
+          | 1997 | 35700294306 | 10682136848 |
+          | 1998 | 35700294306 | 10682426477 |
+          | 2020 | 35052344091 | 10428494702 |
+          EOF
+      - name: validate archives
+        run: |
+          set -e
+          for archive in release-assets/*.zip; do unzip -t "$archive" >/dev/null; done
+          test "$(wc -l < release-assets/SHA256SUMS)" -eq 9
+      - name: create versioned release
+        run: |
+          gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1 || gh release create "$TAG" --repo "$REPO" --title "ERA5-Land annual partials v1" --notes "Durable preservation of validated annual temperature-grid partials. Not deployed to the rainfall-only site."
+          gh release upload "$TAG" --repo "$REPO" --clobber release-assets/*
