@@ -13,28 +13,31 @@ Snapshot: 2026-09-23 UTC. Requests are for daily 2 m air-temperature statistics,
 | 1998 | `a29c37ba-0edb-4c99-8e7d-924bf135186e` | `0d3c3f00-15bd-46e4-b213-d3a9d5aa21c9` | downloaded, reduced, and durably released | [recovery run](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35700294306) |
 | 1999 | `20f44651-086d-4047-ae14-37d0c8e9287a` | `e6f2ca75-117e-4cad-8426-11be3793b7b3` | downloaded, reduced, validated, and durably released | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35821859181), [recovery/reduction](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35822042897) |
 | 2000 | `49eff449-7357-495a-8420-144098ea4c53` | `4a7976fa-724e-45d3-843d-e2b3d9a7eba7` | downloaded, reduced, validated, and durably released | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35821859181), [recovery/reduction](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35822042897) |
-| 2001 | `9b512fce-d2f9-4cc0-84a6-760675749c4c` | `dc1df9de-7996-41c6-8970-cfe78989750e` | minimum accepted; maximum recovered and preserved raw | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35821859181), [recovery](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35822042897) |
-| 2002 | `fdca74ee-4b0c-46ad-a59a-03c850b0d3de` | `38a70783-3ce8-4b40-b682-1cef567e1a02` | accepted by CDS; awaiting success | [submission run](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35822042897) |
-| 2003 | `44d20286-9d88-4fec-966a-eb7e631a816f` | not submitted | minimum accepted by CDS; awaiting success | [submission run](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35822042897) |
+| 2001 | `9b512fce-d2f9-4cc0-84a6-760675749c4c` | `dc1df9de-7996-41c6-8970-cfe78989750e` | downloaded, reduced, validated, and durably released | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35895586792), [recovery/reduction](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35895837602) |
+| 2002 | `fdca74ee-4b0c-46ad-a59a-03c850b0d3de` | `38a70783-3ce8-4b40-b682-1cef567e1a02` | downloaded, reduced, validated, and durably released | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35895586792), [recovery/reduction](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35895837602) |
+| 2003 | `44d20286-9d88-4fec-966a-eb7e631a816f` | `ebc41bdc-27b3-40e3-bc64-ecfd50151bac` | accepted by CDS; awaiting success | [minimum submission](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35822042897), [maximum submission](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35895837602) |
+| 2004 | `064dae72-c369-4418-9e5a-235e53b3dbff` | `bf2b6c96-f6dc-49eb-b582-f31f39f57801` | accepted by CDS; awaiting success | [submission run](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35895837602) |
 
-The four unfinished requests are 2001 minimum, both 2002 statistics, and 2003 minimum. Do not submit another request until one of those exact IDs succeeds and is recovered.
+The four unfinished requests are both 2003 statistics and both 2004 statistics. Do not submit another request until one of those exact IDs succeeds and is recovered.
 
 ## Latest recoveries and manifests
 
-| Item | Payload or manifest SHA-256 | Actions artifact digest |
-| --- | --- | --- |
-| 1999 daily minimum raw | `45b1cb4fac0d9d078ac2cc2ae6030d9f52ab05f449c36b239fa95fbad6859a2f` | `20c6e2185b6eb4061a2f960bec93e410be1eb95d63e56b3e548af8e6b7cd8ef0` |
-| 2000 daily minimum raw | `abe93bee6f26cff08c14bed9b69033d4094c037df77f27083e80ec528f17911b` | `e79be3e18f0323d47f2579de5ab9716d547b4836de0917fe8ea4fb20c10aefe8` |
-| 2001 daily maximum raw | `2159e1c3e02612db90c4a152c8582d1b38b1552e3fde466683eb2c98c475864d` | `e555424ebc7ef412ff638b8ba30bdc14aeedab7d425b2be37def91898c15ba4b` |
-| 2002 daily minimum manifest | recorded in artifact | `618d3850e6e09217418474f6eccab1975c4002154ca5230376698de60f16f9c9` |
-| 2002 daily maximum manifest | recorded in artifact | `cfc83410eaaa51623d475adc0b76010344eae3f41357a83e0e7edc490c97256d` |
-| 2003 daily minimum manifest | recorded in artifact | `3f73716683bcd52ee6a02dcc21ea7028b276e8a4004651e7fa456c7b816ac251` |
+The [2001–2002 recovery run](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/35895837602) preserved the three successful raw results and the three replacement manifests below. All expire 2026-12-22.
 
-All six artifacts above expire 2026-12-22. Earlier recovered maximum halves remain preserved: 1999 maximum payload 4,570,057 bytes, Actions digest `331f7f1dbd88d9cb147c81d45044d7916b8a9f45b72712027e60eccc96cb528d`; 2000 maximum payload 4,540,263 bytes, Actions digest `a28014d9fd0b3d3d0f0549195ff3cd414a52e76f8ca05bac3e327d8de149f035`.
+| Item | Payload SHA-256 or request ID | Actions artifact digest |
+| --- | --- | --- |
+| 2001 daily minimum raw | `35ffc67c680c5548cb1bd72d6d9f7fc3d66eee5dbf5b84fd5a9533f7a3e9526f` | `cc81db43f7f3c343cdf528e559decf79656730a9c47d94c3a8617ea5c1000235` |
+| 2002 daily minimum raw | `be8fe34017a523bb4db484ae76c17bc5711d3a74639acb45ba5a72ba0889307c` | `be4b1468be14ddcabe2b55b6614aec9a609e7055079d9305af667ded196861d0` |
+| 2002 daily maximum raw | `34aad2a9ba36c2ffd37232aa1919c532db98a0d28cb8e38e38b087a43c8f20e5` | `65e8622a57bcf979fc8df1cb6d048c37491e3720d3e83fe271ce179694bf70a0` |
+| 2003 daily maximum manifest | `ebc41bdc-27b3-40e3-bc64-ecfd50151bac` | `fcdeee9d83fb4f54338881045d73e33c98dc4858692214fec9a2bc5c4e815691` |
+| 2004 daily minimum manifest | `064dae72-c369-4418-9e5a-235e53b3dbff` | `e129fbf8e6f5a98ca25a621258a2428db4e5d1e20c06e81f03eb6bedea734a5d` |
+| 2004 daily maximum manifest | `bf2b6c96-f6dc-49eb-b582-f31f39f57801` | `48d267705378e769f3f8aab4256a7dc15e6d3d0deb376a0a9f06bf93fa44e416` |
+
+Earlier recovered halves needed for completed annual partials remain preserved in their recorded Actions runs and release assets.
 
 ## Durable annual partials
 
-Validated annual partials for 1991–2000 and 2020 are preserved in the versioned [`era5-land-annual-partials-v1` release](https://github.com/t-campbell/madagascar-climate-tool/releases/tag/era5-land-annual-partials-v1). Annual archive checksums:
+Validated annual partials for 1991–2002 and 2020 are preserved in the versioned [`era5-land-annual-partials-v1` release](https://github.com/t-campbell/madagascar-climate-tool/releases/tag/era5-land-annual-partials-v1). Annual archive checksums:
 
 | Year | Release archive SHA-256 | Annual NPZ SHA-256 |
 | --- | --- | --- |
@@ -48,9 +51,11 @@ Validated annual partials for 1991–2000 and 2020 are preserved in the versione
 | 1998 | `f84ad040f091465c38d02e33cb6b20912d7cb8c95088e77e72509cc5ecc6c34a` | recorded inside archive |
 | 1999 | `c91005d0fe5dbfa81fc0c8bb741623698f5b3b7a8a3ddae192b62af4af752066` | `841f38c36f11ba26917f88e7208c855e92e16f9721f678c8a5efffb94db38e13` |
 | 2000 | `6b4db6da3730c9c033e709753e9308187f4de736f008d6f2095b7797590aa366` | `33253bdeea1696a047c4d5955b18aff596a350a74e0734ab720c18107777d82a` |
+| 2001 | `5bd2e1bd1c3952921236730aca2989e55ce66561bad5f27c1b576aaffad4d915` | `8dccfd42eef26378b2230ba1c03619fd2c94cf77eea84a1e0d2c6af59808ddb2` |
+| 2002 | `8456c517d2234a38e4b6fb66b7962dc3171c3e53785091f8ce59a4549f0b0c51` | `fe26a4928784e343464828d5d21cf9e72a80951bfa367562c309081945e0ad4b` |
 | 2020 | `97d874aaa7b34145114dc8f3653d7fefe0edaedb1c7cf046f9776f40cdc21bde` | recorded inside archive |
 
-The 1999 and 2000 Actions partial artifacts have digests `dbfa79769b9269d779804ca8851f3e8f760b7892ce41b77bbf44981edfcafb7a` and `d8364d5b7455c1a0e49a30d3037ecd56875f0000f6963f66a1fe8d137ed8cf95`, respectively. Their source and manifest checksums are in the release sidecars `era5-1999-SHA256SUMS` and `era5-2000-SHA256SUMS`.
+The 1999–2002 Actions partial artifact digests are `dbfa79769b9269d779804ca8851f3e8f760b7892ce41b77bbf44981edfcafb7a`, `d8364d5b7455c1a0e49a30d3037ecd56875f0000f6963f66a1fe8d137ed8cf95`, `3613271f4d32629d06e93331681ff3a77505896795fcc040880802d1818bf542`, and `e6aa55613134c78129409e9f7a3a0dde4528b107bc442e0f4d48893388166cd2`. Source and manifest checksums are in their matching release sidecars.
 
 CDS rejects two-year requests at this spatial and temporal extent with “cost limits exceeded”; annual requests are the validated maximum size. Keep no more than four unfinished requests. Recover any successful existing ID before submitting at most one chronological replacement slot; never resubmit an already recorded year/statistic.
 
