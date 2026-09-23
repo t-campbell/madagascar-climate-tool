@@ -97,7 +97,7 @@
               <label><input id="show-heavy-days" type="checkbox"><span class="series-swatch heavy-swatch"></span>heavy days</label>
             </fieldset>
           </div>
-          <div id="rain-chart" class="chart" role="img" aria-label="monthly rainfall totals in blue bars on a fixed left axis from zero to 1,000 millimeters, and average rainy days in orange on the right axis from zero to 31 days; exact values are in the table below"></div>
+          <div id="rain-chart" class="chart" role="img" aria-label="monthly rainfall totals in blue bars on a fixed left axis from zero to 1,000 millimeters, and average rainy days in orange on the right axis from zero to 31 days; rounded values are in the table below"></div>
           <p class="chart-note">rainfall uses the fixed left axis (0–1,000 mm); rainy and heavy-rain days use the right axis (0–31 days). heavy means ≥20 mm in one day.</p>
           <div class="chart-table-wrap">
             <table id="rain-table">
@@ -128,6 +128,7 @@
           <p><strong>rainfall:</strong> CHIRPS Final at 0.05° resolution, using 1991–2020 data. coordinate lookups use the nearest land cell within 12 km. small areas and complex terrain may differ from the cell average.</p>
           <p><strong>typical range:</strong> the 10th to 90th percentile of that calendar month's rainfall totals across 1991–2020. it describes past variation, not a forecast interval.</p>
           <p><strong>rain frequency:</strong> a rainy day has at least 1 mm. a heavy-rain day has at least 20 mm. both columns show the mean number of days per month across the baseline years.</p>
+          <p><strong>rounding:</strong> displayed rainfall totals, ranges, and wet-day intensity are rounded to the nearest whole millimetre. mean rainy-day and heavy-rain-day counts are rounded to the nearest whole day. calculations and chart positions still use the unrounded values.</p>
           <p><strong>place names:</strong> settlement search uses <a href="https://www.geonames.org/" rel="external">GeoNames</a> data (CC BY). enter coordinates if the local name is missing or ambiguous.</p>
         </div>
       </section>
