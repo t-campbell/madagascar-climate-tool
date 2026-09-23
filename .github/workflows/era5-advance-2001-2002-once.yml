@@ -1,0 +1,162 @@
+name: Advance ERA5 2001-2002 (one-shot)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/era5-advance-2001-2002-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  advance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RELEASE_TAG: era5-land-annual-partials-v1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "cdsapi>=0.7.7,<1"
+
+      - name: recover 2001 daily minimum
+        run: |
+          python -m pipeline.era5_download_period recover --request-id "9b512fce-d2f9-4cc0-84a6-760675749c4c" --output 2001-daily-minimum.nc
+          sha256sum 2001-daily-minimum.nc > 2001-daily-minimum.sha256
+      - name: preserve 2001 daily minimum
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-raw-2001-daily-minimum
+          path: |
+            2001-daily-minimum.nc
+            2001-daily-minimum.sha256
+          if-no-files-found: error
+          retention-days: 90
+      - name: submit 2003 daily maximum
+        run: >-
+          python -m pipeline.era5_download_period submit
+          --year 2003
+          --months-csv "1,2,3,4,5,6,7,8,9,10,11,12"
+          --statistic daily_maximum
+          --manifest 2003-daily-maximum.json
+      - name: preserve 2003 daily maximum manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-request-2003-daily-maximum
+          path: 2003-daily-maximum.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: recover 2002 daily minimum
+        run: |
+          python -m pipeline.era5_download_period recover --request-id "fdca74ee-4b0c-46ad-a59a-03c850b0d3de" --output 2002-daily-minimum.nc
+          sha256sum 2002-daily-minimum.nc > 2002-daily-minimum.sha256
+      - name: preserve 2002 daily minimum
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-raw-2002-daily-minimum
+          path: |
+            2002-daily-minimum.nc
+            2002-daily-minimum.sha256
+          if-no-files-found: error
+          retention-days: 90
+      - name: submit 2004 daily minimum
+        run: >-
+          python -m pipeline.era5_download_period submit
+          --year 2004
+          --months-csv "1,2,3,4,5,6,7,8,9,10,11,12"
+          --statistic daily_minimum
+          --manifest 2004-daily-minimum.json
+      - name: preserve 2004 daily minimum manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-request-2004-daily-minimum
+          path: 2004-daily-minimum.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: recover 2002 daily maximum
+        run: |
+          python -m pipeline.era5_download_period recover --request-id "38a70783-3ce8-4b40-b682-1cef567e1a02" --output 2002-daily-maximum.nc
+          sha256sum 2002-daily-maximum.nc > 2002-daily-maximum.sha256
+      - name: preserve 2002 daily maximum
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-raw-2002-daily-maximum
+          path: |
+            2002-daily-maximum.nc
+            2002-daily-maximum.sha256
+          if-no-files-found: error
+          retention-days: 90
+      - name: submit 2004 daily maximum
+        run: >-
+          python -m pipeline.era5_download_period submit
+          --year 2004
+          --months-csv "1,2,3,4,5,6,7,8,9,10,11,12"
+          --statistic daily_maximum
+          --manifest 2004-daily-maximum.json
+      - name: preserve 2004 daily maximum manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-request-2004-daily-maximum
+          path: 2004-daily-maximum.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: obtain preserved 2001 maximum
+        run: |
+          mkdir -p prior-maximum/2001
+          gh api repos/$REPO/actions/artifacts/10733198619/zip > prior-maximum/2001.zip
+          unzip -q prior-maximum/2001.zip -d prior-maximum/2001
+          test -s prior-maximum/2001/2001-daily-maximum.nc
+      - name: install temperature reducer
+        run: >-
+          python -m pip install
+          "numpy>=2,<3"
+          "xarray>=2025.1,<2027"
+          "netCDF4>=1.7,<2"
+
+      - name: reduce and validate 2001
+        run: |
+          python -m pipeline.era5_grid_period --years-csv "2001" --months-csv "1,2,3,4,5,6,7,8,9,10,11,12" --minimum 2001-daily-minimum.nc --maximum prior-maximum/2001/2001-daily-maximum.nc --output-directory annual-2001 --manifest annual-2001.json
+          python -m json.tool annual-2001.json
+          sha256sum annual-2001/* annual-2001.json > era5-2001-SHA256SUMS
+          zip -qr era5-2001-grid-partial.actions-artifact.zip annual-2001 annual-2001.json era5-2001-SHA256SUMS
+          sha256sum era5-2001-grid-partial.actions-artifact.zip
+      - name: preserve validated 2001 partial
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-2001-grid-partial
+          path: |
+            annual-2001/
+            annual-2001.json
+            era5-2001-SHA256SUMS
+          if-no-files-found: error
+          retention-days: 90
+      - name: release validated 2001 partial
+        run: gh release upload "$RELEASE_TAG" --repo "$REPO" era5-2001-grid-partial.actions-artifact.zip era5-2001-SHA256SUMS
+
+      - name: reduce and validate 2002
+        run: |
+          python -m pipeline.era5_grid_period --years-csv "2002" --months-csv "1,2,3,4,5,6,7,8,9,10,11,12" --minimum 2002-daily-minimum.nc --maximum 2002-daily-maximum.nc --output-directory annual-2002 --manifest annual-2002.json
+          python -m json.tool annual-2002.json
+          sha256sum annual-2002/* annual-2002.json > era5-2002-SHA256SUMS
+          zip -qr era5-2002-grid-partial.actions-artifact.zip annual-2002 annual-2002.json era5-2002-SHA256SUMS
+          sha256sum era5-2002-grid-partial.actions-artifact.zip
+      - name: preserve validated 2002 partial
+        uses: actions/upload-artifact@v4
+        with:
+          name: era5-2002-grid-partial
+          path: |
+            annual-2002/
+            annual-2002.json
+            era5-2002-SHA256SUMS
+          if-no-files-found: error
+          retention-days: 90
+      - name: release validated 2002 partial
+        run: gh release upload "$RELEASE_TAG" --repo "$REPO" era5-2002-grid-partial.actions-artifact.zip era5-2002-SHA256SUMS
