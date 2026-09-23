@@ -40,6 +40,12 @@ This release describes historical rainfall patterns from 1991–2020. It is not 
 - Dry spell: consecutive days with rainfall below 1.0 mm.
 - Dry-spell risk: proportion of complete years in which a dry spell of the stated length begins or continues within the reporting period.
 
+## Display rounding
+
+- Rainfall totals, percentile ranges, and wet-day intensity are displayed to the nearest whole millimetre.
+- Mean rainy-day and heavy-rain-day frequencies are displayed to the nearest whole day.
+- Rounding is presentation-only. Calculations, thresholds, comparisons, and chart geometry use the unrounded baseline values.
+
 ## Temperature definitions
 
 - Monthly minimum temperature: mean of daily minimum temperature for the month, averaged across complete years.
