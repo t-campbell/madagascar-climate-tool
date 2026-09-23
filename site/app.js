@@ -3,6 +3,9 @@ const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "
 const RAIN_AXIS_MAX_MM = 1000;
 const MADAGASCAR_BOUNDS = { south: -26, north: -11, west: 43, east: 51 };
 
+const formatMillimeters = (value) => Math.round(value).toLocaleString();
+const formatDays = (value) => Math.round(value).toLocaleString();
+
 const elements = {
   report: document.querySelector("#report"),
   placeForm: document.querySelector("#place-form"),
@@ -225,7 +228,7 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
         class: "rain-bar",
       });
       const title = svgElement("title");
-      title.textContent = `${MONTHS[index]}: ${value} mm rainfall`;
+      title.textContent = `${MONTHS[index]}: ${formatMillimeters(value)} mm rainfall`;
       rect.append(title);
       svg.append(rect);
     }
@@ -240,7 +243,7 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
         class: "heavy-days-bar",
       });
       const title = svgElement("title");
-      title.textContent = `${MONTHS[index]}: ${heavyRainDays[index]} days with ≥20 mm rain`;
+      title.textContent = `${MONTHS[index]}: ${formatDays(heavyRainDays[index])} days with ≥20 mm rain`;
       rect.append(title);
       svg.append(rect);
     }
@@ -260,7 +263,7 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
     points.forEach(({ x, y }, index) => {
       const dot = svgElement("circle", { cx: x, cy: y, r: 4, class: "rain-days-dot" });
       const title = svgElement("title");
-      title.textContent = `${MONTHS[index]}: ${rainyDays[index]} days with ≥1 mm rain`;
+      title.textContent = `${MONTHS[index]}: ${formatDays(rainyDays[index])} days with ≥1 mm rain`;
       dot.append(title);
       svg.append(dot);
     });
@@ -274,8 +277,8 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
   elements.rainChart.replaceChildren(svg);
   const visible = [showRainfall && "rainfall", showRainyDays && "rainy days", showHeavyDays && "heavy-rain days"].filter(Boolean);
   elements.rainChart.setAttribute("aria-label", visible.length
-    ? `monthly ${visible.join(", ")}; exact values are in the table below`
-    : "no chart series selected; exact values are in the table below");
+    ? `monthly ${visible.join(", ")}; rounded values are in the table below`
+    : "no chart series selected; rounded values are in the table below");
 }
 
 for (const control of [elements.showRainfall, elements.showRainyDays, elements.showHeavyDays]) {
@@ -298,7 +301,7 @@ function buildInterpretation(rain, heavyRainDays, risk) {
     (_, index) => heavyRainDays[index] >= mostHeavyDays - 0.5
   );
   notes.push(
-    `Days with at least 20 mm are most frequent in ${heavyMonths.join(", ")} (about ${mostHeavyDays.toFixed(1)} per month in the historical record).`
+    `Days with at least 20 mm are most frequent in ${heavyMonths.join(", ")} (about ${formatDays(mostHeavyDays)} per month in the historical record).`
   );
   if (wetMonths >= 8) {
     notes.push("Rain is spread across much of the year. Drainage and workable rain-free days may be important.");
@@ -328,7 +331,7 @@ function renderReport(nearest, request) {
     : "coordinate lookup · Madagascar";
   elements.reportTitle.textContent = request.place ? request.place.name : "rainfall at coordinates";
   elements.reportCoordinates.textContent = `requested: ${request.requestedLat.toFixed(4)}, ${request.requestedLon.toFixed(4)}`;
-  elements.annualRain.textContent = `${Math.round(annual).toLocaleString()} mm`;
+  elements.annualRain.textContent = `${formatMillimeters(annual)} mm`;
   elements.rainSeason.textContent = `wettest: ${MONTHS[wettestIndex]} · most ≥20 mm days: ${MONTHS[highestHeavyIndex]}`;
   elements.dryRisk.textContent = `${Math.round(dryRisk[highestRiskIndex] * 100)}%`;
   elements.drySeason.textContent = `highest in ${MONTHS[highestRiskIndex]}`;
@@ -337,7 +340,14 @@ function renderReport(nearest, request) {
   renderRainChart(rain, rainyDays, heavyRainDays);
   elements.rainTableBody.replaceChildren(...MONTHS.map((month, index) => {
     const row = document.createElement("tr");
-    for (const value of [month, `${rain[index]} mm`, `${p10[index]}–${p90[index]} mm`, rainyDays[index], heavyRainDays[index], `${wetIntensity[index]} mm`]) {
+    for (const value of [
+      month,
+      `${formatMillimeters(rain[index])} mm`,
+      `${formatMillimeters(p10[index])}–${formatMillimeters(p90[index])} mm`,
+      formatDays(rainyDays[index]),
+      formatDays(heavyRainDays[index]),
+      `${formatMillimeters(wetIntensity[index])} mm`,
+    ]) {
       const cell = document.createElement("td");
       cell.textContent = value;
       row.append(cell);
