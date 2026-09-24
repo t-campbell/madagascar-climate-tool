@@ -1,0 +1,50 @@
+name: ERA5 queue probe (one-shot)
+
+on:
+  push:
+    paths:
+      - ".github/workflows/era5-queue-probe-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: probe ${{ matrix.year }} ${{ matrix.statistic }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - year: 2003
+            statistic: daily_minimum
+            request_id: 44d20286-9d88-4fec-966a-eb7e631a816f
+          - year: 2003
+            statistic: daily_maximum
+            request_id: ebc41bdc-27b3-40e3-bc64-ecfd50151bac
+          - year: 2004
+            statistic: daily_minimum
+            request_id: 064dae72-c369-4418-9e5a-235e53b3dbff
+          - year: 2004
+            statistic: daily_maximum
+            request_id: bf2b6c96-f6dc-49eb-b582-f31f39f57801
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "cdsapi>=0.7.7,<1"
+      - name: read CDS state
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          CDS_REQUEST_ID: ${{ matrix.request_id }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pipeline.era5_download_period import _api_token, _client
+          client = _client(_api_token(None), wait_until_complete=False)
+          remote = client.client.get_remote(os.environ["CDS_REQUEST_ID"])
+          print("CDS_STATE=" + json.dumps({"requestId": os.environ["CDS_REQUEST_ID"], "status": remote.status}, sort_keys=True))
+          PY
