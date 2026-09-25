@@ -38,7 +38,7 @@ jobs:
           import os
           from pipeline.era5_download_period import _api_token, _client
           request_id = os.environ["REQUEST_ID"]
-          remote = _client(_api_token(None), wait_until_complete=False).get_remote(request_id)
+          remote = _client(_api_token(None), wait_until_complete=False).client.get_remote(request_id)
           print(f"CDS_REQUEST_ID={request_id}")
           print(f"CDS_STATE={remote.status}")
           PY
