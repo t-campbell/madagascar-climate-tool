@@ -1,0 +1,44 @@
+name: ERA5 queue probe (one shot)
+
+on:
+  push:
+    paths:
+      - .github/workflows/era5-queue-probe-once.yml
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: 2005-maximum
+            request_id: 5f0de974-378e-40e4-90a5-cb2039d43e18
+          - label: 2006-minimum
+            request_id: 87c55b03-0837-4ca5-b85b-34dc184866c7
+          - label: 2006-maximum
+            request_id: 043fd5e2-a3cf-4e83-ba59-dea3c23f4d1d
+          - label: 2007-minimum
+            request_id: 078cf2e1-2cef-4b69-bc36-227c3ecf2408
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "cdsapi>=0.7.7,<1"
+      - name: Probe exact request
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          REQUEST_ID: ${{ matrix.request_id }}
+        run: |
+          python - <<'PY'
+          import os
+          from pipeline.era5_download_period import _api_token, _client
+          request_id = os.environ["REQUEST_ID"]
+          remote = _client(_api_token()).get_remote(request_id)
+          print(f"CDS_REQUEST_ID={request_id}")
+          print(f"CDS_STATE={remote.status}")
+          PY
