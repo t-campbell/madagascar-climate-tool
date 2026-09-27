@@ -11,41 +11,44 @@
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="#top" aria-label="Madagascar climate field guide home">
+      <a class="brand" href="#top" data-i18n-aria-label="homeLabel" aria-label="Madagascar climate field guide home">
         <span class="brand-mark" aria-hidden="true">MG</span>
-        <span>climate field guide</span>
+        <span data-i18n="brand">climate field guide</span>
       </a>
-      <a class="method-link" href="#methods">methods</a>
+      <div class="topbar-actions">
+        <a class="method-link" href="#methods" data-i18n="methods">methods</a>
+        <button id="language-toggle" class="language-toggle" type="button" aria-label="switch to Malagasy">MG</button>
+      </div>
     </header>
 
     <main id="top">
       <section class="search-panel" aria-labelledby="search-title">
         <div>
-          <p class="eyebrow">historical rainfall · 1991–2020</p>
-          <h1 id="search-title">check a location in Madagascar</h1>
+          <p class="eyebrow" data-i18n="historicalRainfall">historical rainfall · 1991–2020</p>
+          <h1 id="search-title" data-i18n="searchTitle">check a location in Madagascar</h1>
         </div>
 
         <form id="place-form" class="place-search" role="search">
-          <label for="place-input">town or settlement</label>
+          <label for="place-input" data-i18n="town">town or settlement</label>
           <div class="input-action">
-            <input id="place-input" name="place" type="search" autocomplete="off" placeholder="try Fenerive Est or Tana" aria-describedby="search-help">
-            <button type="submit">search</button>
+            <input id="place-input" name="place" type="search" autocomplete="off" placeholder="try Fenerive Est or Tana" data-i18n-placeholder="placePlaceholder" aria-describedby="search-help">
+            <button type="submit" data-i18n="search">search</button>
           </div>
-          <p id="search-help" class="field-help">start typing a place name; for an unlisted settlement, use coordinates</p>
-          <div id="suggestions" class="suggestions" role="listbox" aria-label="matching places" hidden></div>
+          <p id="search-help" class="field-help" data-i18n="searchHelp">start typing a place name; for an unlisted settlement, use coordinates</p>
+          <div id="suggestions" class="suggestions" role="listbox" aria-label="matching places" data-i18n-aria-label="matchingPlaces" hidden></div>
         </form>
 
         <details class="coordinate-box">
-          <summary>use coordinates instead</summary>
+          <summary data-i18n="useCoordinates">use coordinates instead</summary>
           <form id="coordinate-form" class="coordinate-form">
-            <label for="latitude">latitude
+            <label for="latitude"><span data-i18n="latitude">latitude</span>
               <input id="latitude" name="latitude" type="number" inputmode="decimal" min="-26" max="-11" step="any" placeholder="-17.381" required>
             </label>
-            <label for="longitude">longitude
+            <label for="longitude"><span data-i18n="longitude">longitude</span>
               <input id="longitude" name="longitude" type="number" inputmode="decimal" min="43" max="51" step="any" placeholder="49.409" required>
             </label>
-            <button type="submit">check coordinates</button>
-            <button type="button" class="secondary" id="location-button">use my location</button>
+            <button type="submit" data-i18n="checkCoordinates">check coordinates</button>
+            <button type="button" class="secondary" id="location-button" data-i18n="useLocation">use my location</button>
           </form>
         </details>
 
@@ -53,19 +56,19 @@
       </section>
 
       <aside class="fixture-notice" role="note">
-        <strong>rainfall demo</strong>
-        <span>1991–2020 historical CHIRPS rainfall. temperature and current-season comparisons are coming later; this is not a forecast.</span>
+        <strong data-i18n="rainfallDemo">rainfall demo</strong>
+        <span data-i18n="demoNote">1991–2020 historical CHIRPS rainfall. temperature and current-season comparisons are coming later; this is not a forecast.</span>
       </aside>
 
       <section id="report" class="report" aria-live="polite" aria-busy="true">
         <header class="report-header">
           <div>
-            <p class="eyebrow" id="report-region">loading location</p>
-            <h2 id="report-title">rainfall report</h2>
+            <p class="eyebrow" id="report-region" data-i18n="loadingLocation">loading location</p>
+            <h2 id="report-title" data-i18n="rainfallReport">rainfall report</h2>
             <p class="coordinates" id="report-coordinates"></p>
           </div>
           <div class="freshness">
-            <span>historical baseline</span>
+            <span data-i18n="baseline">historical baseline</span>
             <strong>1991–2020</strong>
             <span>CHIRPS Final</span>
           </div>
@@ -73,12 +76,12 @@
 
         <div class="summary-grid">
           <article class="summary-card rain-card">
-            <span>typical annual rain</span>
+            <span data-i18n="annualRain">typical annual rain</span>
             <strong id="annual-rain">—</strong>
             <small id="rain-season">—</small>
           </article>
           <article class="summary-card dry-card">
-            <span>highest 10-day dry-spell risk</span>
+            <span data-i18n="dryRisk">highest 10-day dry-spell risk</span>
             <strong id="dry-risk">—</strong>
             <small id="dry-season">—</small>
           </article>
@@ -87,56 +90,56 @@
         <article class="chart-section">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">historical pattern</p>
-              <h3>rain through the year</h3>
+              <p class="eyebrow" data-i18n="historicalPattern">historical pattern</p>
+              <h3 data-i18n="yearRain">rain through the year</h3>
             </div>
-            <fieldset class="series-picker" aria-label="choose chart series">
-              <legend class="visually-hidden">choose chart series</legend>
-              <label><input id="show-rainfall" type="checkbox" checked><span class="series-swatch rain-swatch"></span>rainfall</label>
-              <label><input id="show-rainy-days" type="checkbox" checked><span class="series-swatch rainy-swatch"></span>rainy days</label>
-              <label><input id="show-heavy-days" type="checkbox"><span class="series-swatch heavy-swatch"></span>heavy days</label>
+            <fieldset class="series-picker" aria-label="choose chart series" data-i18n-aria-label="chooseSeries">
+              <legend class="visually-hidden" data-i18n="chooseSeries">choose chart series</legend>
+              <label><input id="show-rainfall" type="checkbox" checked><span class="series-swatch rain-swatch"></span><span data-i18n="rainfall">rainfall</span></label>
+              <label><input id="show-rainy-days" type="checkbox" checked><span class="series-swatch rainy-swatch"></span><span data-i18n="rainyDays">rainy days</span></label>
+              <label><input id="show-heavy-days" type="checkbox"><span class="series-swatch heavy-swatch"></span><span data-i18n="heavyDays">heavy days</span></label>
             </fieldset>
           </div>
-          <div id="rain-chart" class="chart" role="img" aria-label="monthly rainfall totals in blue bars on a fixed left axis from zero to 1,000 millimeters, and average rainy days in orange on the right axis from zero to 31 days; rounded values are in the table below"></div>
-          <p class="chart-note">rainfall uses the fixed left axis (0–1,000 mm); rainy and heavy-rain days use the right axis (0–31 days). heavy means ≥20 mm in one day.</p>
+          <div id="rain-chart" class="chart" role="img" aria-label="monthly rainfall totals in blue bars on a fixed left axis from zero to 1,000 millimeters, and average rainy days in orange on the right axis from zero to 31 days; rounded values are in the table below" data-i18n-aria-label="chartAria"></div>
+          <p class="chart-note" data-i18n="chartNote">rainfall uses the fixed left axis (0–1,000 mm); rainy and heavy-rain days use the right axis (0–31 days). heavy means ≥20 mm in one day.</p>
           <div class="chart-table-wrap">
             <table id="rain-table">
-              <caption class="visually-hidden">monthly rainfall totals and historical range, rainy-day frequency, heavy-rain-day frequency, and wet-day intensity</caption>
-              <thead><tr><th>month</th><th>mean rain</th><th>typical range</th><th>rainy days</th><th>days ≥20 mm</th><th>mean wet day</th></tr></thead>
+              <caption class="visually-hidden" data-i18n="tableCaption">monthly rainfall totals and historical range, rainy-day frequency, heavy-rain-day frequency, and wet-day intensity</caption>
+              <thead><tr><th data-i18n="month">month</th><th data-i18n="meanRain">mean rain</th><th data-i18n="typicalRange">typical range</th><th data-i18n="rainyDays">rainy days</th><th data-i18n="days20">days ≥20 mm</th><th data-i18n="meanWetDay">mean wet day</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </article>
 
         <article class="interpretation-section">
-          <p class="eyebrow">field interpretation</p>
-          <h3>what the pattern suggests</h3>
+          <p class="eyebrow" data-i18n="fieldInterpretation">field interpretation</p>
+          <h3 data-i18n="patternSuggests">what the pattern suggests</h3>
           <ul id="interpretation-list"></ul>
-          <p class="caution">this describes historical climate, not a forecast or a planting recommendation for this season.</p>
+          <p class="caution" data-i18n="caution">this describes historical climate, not a forecast or a planting recommendation for this season.</p>
         </article>
 
         <footer class="resolution-note">
-          <strong>spatial basis</strong>
+          <strong data-i18n="spatialBasis">spatial basis</strong>
           <span id="cell-details"></span>
         </footer>
       </section>
 
       <section id="methods" class="methods">
-        <p class="eyebrow">methods</p>
-        <h2>what these numbers mean</h2>
+        <p class="eyebrow" data-i18n="methods">methods</p>
+        <h2 data-i18n="numbersMean">what these numbers mean</h2>
         <div class="methods-grid">
-          <p><strong>rainfall:</strong> CHIRPS Final at 0.05° resolution, using 1991–2020 data. coordinate lookups use the nearest land cell within 12 km. small areas and complex terrain may differ from the cell average.</p>
-          <p><strong>typical range:</strong> the 10th to 90th percentile of that calendar month's rainfall totals across 1991–2020. it describes past variation, not a forecast interval.</p>
-          <p><strong>rain frequency:</strong> a rainy day has at least 1 mm. a heavy-rain day has at least 20 mm. both columns show the mean number of days per month across the baseline years.</p>
-          <p><strong>rounding:</strong> displayed rainfall totals, ranges, and wet-day intensity are rounded to the nearest whole millimetre. mean rainy-day and heavy-rain-day counts are rounded to the nearest whole day. calculations and chart positions still use the unrounded values.</p>
-          <p><strong>place names:</strong> settlement search uses <a href="https://www.geonames.org/" rel="external">GeoNames</a> data (CC BY). enter coordinates if the local name is missing or ambiguous.</p>
+          <p><strong data-i18n="methodRainLabel">rainfall:</strong> <span data-i18n="methodRain">CHIRPS Final at 0.05° resolution, using 1991–2020 data. coordinate lookups use the nearest land cell within 12 km. small areas and complex terrain may differ from the cell average.</span></p>
+          <p><strong data-i18n="methodRangeLabel">typical range:</strong> <span data-i18n="methodRange">the 10th to 90th percentile of that calendar month's rainfall totals across 1991–2020. it describes past variation, not a forecast interval.</span></p>
+          <p><strong data-i18n="methodFrequencyLabel">rain frequency:</strong> <span data-i18n="methodFrequency">a rainy day has at least 1 mm. a heavy-rain day has at least 20 mm. both columns show the mean number of days per month across the baseline years.</span></p>
+          <p><strong data-i18n="methodRoundingLabel">rounding:</strong> <span data-i18n="methodRounding">displayed rainfall totals, ranges, and wet-day intensity are rounded to the nearest whole millimetre. mean rainy-day and heavy-rain-day counts are rounded to the nearest whole day. calculations and chart positions still use the unrounded values.</span></p>
+          <p><strong data-i18n="methodPlacesLabel">place names:</strong> <span data-i18n="methodPlacesBefore">settlement search uses</span> <a href="https://www.geonames.org/" rel="external">GeoNames</a> <span data-i18n="methodPlacesAfter">data (CC BY). enter coordinates if the local name is missing or ambiguous.</span></p>
         </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <span>built for low-bandwidth field use</span>
-      <span id="offline-status">checking offline support</span>
+      <span data-i18n="lowBandwidth">built for low-bandwidth field use</span>
+      <span id="offline-status" data-i18n="checkingOffline">checking offline support</span>
     </footer>
 
     <script type="module" src="app.js"></script>
