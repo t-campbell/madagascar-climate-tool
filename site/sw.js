@@ -1,9 +1,10 @@
-const CACHE_NAME = "mg-climate-rainfall-v3";
+const CACHE_NAME = "mg-climate-rainfall-v4";
 const CORE_ASSETS = [
   "./",
   "index.html",
   "styles.css",
   "app.js",
+  "i18n.js",
   "favicon.svg",
   "data/manifest.json",
 ];
