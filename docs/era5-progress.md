@@ -30,10 +30,26 @@ Snapshot: 2026-09-29 UTC. Requests are for daily 2 m air-temperature statistics,
 | 2015 | `79306a79-eec6-4dbb-84b0-2762a75cb438` | `6ecd3791-e0b4-47f8-b31c-030b030e7ae3` | downloaded, reduced, validated, and durably released | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36456261986), [recovery/reduction](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36456531633) |
 | 2016 | `9fdd5808-2b1c-428e-8ab9-98f64f37cd51` | `1fcd383a-d33f-438e-8586-aec9b74e4370` | downloaded, reduced, validated, and durably released | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523799025), [recovery/reduction](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523917277) |
 | 2017 | `c9b05474-558a-4695-a4d8-e2c63edbadef` | `a9e2a91f-6d95-4c0c-9a8a-483117c3838b` | downloaded, reduced, validated, and durably released | [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523799025), [recovery/reduction](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523917277) |
-| 2018 | `3be0457f-a55a-4104-9d22-b012c191eb2c` | `f621e6f1-6096-4759-b9fa-cee1a0df2d19` | both accepted by CDS; awaiting success | [minimum submission](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36456531633), [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523799025), [maximum submission](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523917277) |
-| 2019 | `f61ccbe9-4ce3-45be-b1c2-d4f42640aa7d` | `e26f5c85-c5c0-43f9-b9f6-e4b2f5cb1a32` | both accepted by CDS; awaiting success | [submission run](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523917277) |
+| 2018 | `3be0457f-a55a-4104-9d22-b012c191eb2c` | `f621e6f1-6096-4759-b9fa-cee1a0df2d19`; duplicate `6ea442b7-35ff-47b7-8bc5-59f575c5de2f` | minimum and both maximum requests accepted by CDS; awaiting success | [minimum submission](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36456531633), [probe](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523799025), [maximum submission](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523917277) |
+| 2019 | `f61ccbe9-4ce3-45be-b1c2-d4f42640aa7d`; duplicate `7490cd5c-03ef-49cb-a68a-26b2796ec6c9` | `e26f5c85-c5c0-43f9-b9f6-e4b2f5cb1a32`; duplicate `5caf7009-1e84-4e7e-b841-26ed8eed2df5` | four requests accepted by CDS; awaiting success | [submission run](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36523917277) |
 
-The four unfinished requests are both 2018 statistics and both 2019 statistics. No further requests remain to submit; recover these exact IDs as they succeed.
+Advancement is paused. Seven CDS requests are unfinished: 2018 minimum, two 2018 maximum IDs, two 2019 minimum IDs, and two 2019 maximum IDs. No further year/statistic remains to submit. Do not recover or otherwise advance until the duplicate-request incident below is resolved.
+
+## Duplicate-request blocker
+
+A second [push-triggered copy of the advancement workflow](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105) unexpectedly ran against the same commit after the successful run. It recovered the same successful source IDs again, then submitted three duplicate year/statistic requests before failing when the already-released 2016 asset name collided. The one-shot workflow has been removed. The reason GitHub emitted a second push run for the same commit is not yet established, so advancement is paused rather than guessing.
+
+| Item | Request ID or payload SHA-256 | Actions artifact digest |
+| --- | --- | --- |
+| [duplicate 2018 daily maximum manifest](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105/artifacts/11014600276) | `6ea442b7-35ff-47b7-8bc5-59f575c5de2f` (accepted) | `cbdb0e0e44ac7c36b9c9eff22087c24b9e3ec6080905d2172aa7368fd94c84a0` |
+| [duplicate 2019 daily minimum manifest](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105/artifacts/11014246505) | `7490cd5c-03ef-49cb-a68a-26b2796ec6c9` (accepted) | `35f97fee2f01b4121ff30bed4da1988b47ae992acd43d5346ef7fb193f503009` |
+| [duplicate 2019 daily maximum manifest](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105/artifacts/11014406369) | `5caf7009-1e84-4e7e-b841-26ed8eed2df5` (accepted) | `413b3ed22d8526e08eed18844ce65fce6ff98d28c62865f59cda89614866e45f` |
+| [repeated 2016 daily maximum recovery](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105/artifacts/11014600267) | `839eb485dbc953ab2bcc6ccc21fa21ce91ae9742760a1da14277cfb23107147e` | `367c6aa3818243c2e6a042dae14abd33f9bceb0667b290a671763010bcfde135` |
+| [repeated 2017 daily minimum recovery](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105/artifacts/11014181556) | `9fa654cd33540c61bd2a10cb9290bbc63b53954b3eae4e95bbff0ce24da9e04e` | `e6e00e4c5ea48b889dd8a20db8d8eaafecbbfa79cc4e16a2259d560e4042d3b8` |
+| [repeated 2017 daily maximum recovery](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105/artifacts/11014386311) | `775ca59a5e352bf6e5f3312491111f32d9f977ea4a83b9fccd8f85306bce36af` | `111746e179e160b89b919bc1fbebacb9611968cbd4907ec91ff6d5dbb3a45f11` |
+| [repeated 2016 annual partial](https://github.com/t-campbell/madagascar-climate-tool/actions/runs/36524106105/artifacts/11013921772) | NPZ `73e9fa4373333b286817bfe3aa05c488761a1d74613ff2ab313b70261332aefb` | `c8d0f03cf590030dce1401f9d5302369f633345fcd07d7685a0b42ceba222cce` |
+
+These incident artifacts expire 2026-12-28. The durable 2016 and 2017 release assets from the first run remain valid.
 
 ## Latest recoveries and manifests
 
