@@ -1,0 +1,48 @@
+name: ERA5 request reconciliation (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: 2018-minimum-primary
+            request_id: 3be0457f-a55a-4104-9d22-b012c191eb2c
+          - label: 2018-maximum-primary
+            request_id: f621e6f1-6096-4759-b9fa-cee1a0df2d19
+          - label: 2018-maximum-duplicate
+            request_id: 6ea442b7-35ff-47b7-8bc5-59f575c5de2f
+          - label: 2019-minimum-primary
+            request_id: f61ccbe9-4ce3-45be-b1c2-d4f42640aa7d
+          - label: 2019-minimum-duplicate
+            request_id: 7490cd5c-03ef-49cb-a68a-26b2796ec6c9
+          - label: 2019-maximum-primary
+            request_id: e26f5c85-c5c0-43f9-b9f6-e4b2f5cb1a32
+          - label: 2019-maximum-duplicate
+            request_id: 5caf7009-1e84-4e7e-b841-26ed8eed2df5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install "cdsapi>=0.7.7,<1"
+      - name: Probe exact request
+        env:
+          CDS_API_TOKEN: ${{ secrets.CDS_API_TOKEN }}
+          REQUEST_ID: ${{ matrix.request_id }}
+        run: |
+          python - <<'PY'
+          import os
+          from pipeline.era5_download_period import _api_token, _client
+          request_id = os.environ["REQUEST_ID"]
+          remote = _client(_api_token(None), wait_until_complete=False).client.get_remote(request_id)
+          print(f"CDS_REQUEST_ID={request_id}")
+          print(f"CDS_STATE={remote.status}")
+          PY
