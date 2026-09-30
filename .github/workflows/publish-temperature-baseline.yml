@@ -1,0 +1,68 @@
+name: publish temperature baseline
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: era5-land-annual-partials-v1
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install 'numpy>=2,<3'
+      - name: retrieve durable annual ERA5-Land partials
+        run: |
+          mkdir -p /tmp/era5-release /tmp/era5-partials
+          gh release download "$RELEASE_TAG" --pattern 'era5-*-grid-partial.actions-artifact.zip' --dir /tmp/era5-release
+          test "$(find /tmp/era5-release -name '*.zip' | wc -l)" -eq 30
+          for archive in /tmp/era5-release/*.zip; do
+            year="$(basename "$archive" | cut -d- -f2)"
+            mkdir -p "/tmp/era5-partials/$year"
+            unzip -q "$archive" '*.npz' -d "/tmp/era5-partials/$year"
+          done
+          test "$(find /tmp/era5-partials -name '*.npz' | wc -l)" -eq 30
+      - name: merge and publish temperature baseline
+        run: |
+          python -m pipeline.era5_grid_baseline \
+            $(find /tmp/era5-partials -name '*.npz' | sort) \
+            --output /tmp/era5-land-1991-2020.npz \
+            --summary /tmp/era5-land-1991-2020.json
+          sha256sum /tmp/era5-land-1991-2020.npz > /tmp/era5-land-1991-2020.sha256
+          python -m pipeline.publish_temperature \
+            --baseline /tmp/era5-land-1991-2020.npz \
+            --data-directory data
+      - run: npm run check
+      - run: npm run build
+      - name: preserve merged baseline
+        run: >-
+          gh release upload "$RELEASE_TAG"
+          /tmp/era5-land-1991-2020.npz
+          /tmp/era5-land-1991-2020.json
+          /tmp/era5-land-1991-2020.sha256
+          --clobber
+      - name: commit versioned temperature tiles
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data
+          git commit -m "Publish ERA5-Land temperature baseline"
+          git push origin HEAD:main
+      - name: deploy static assets
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

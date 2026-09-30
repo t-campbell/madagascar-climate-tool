@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#12324a">
-    <meta name="description" content="Low-bandwidth historical rainfall patterns for locations across Madagascar.">
+    <meta name="description" content="Low-bandwidth historical rainfall and temperature patterns for locations across Madagascar.">
     <title>Madagascar climate field guide</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css">
@@ -24,7 +24,7 @@
     <main id="top">
       <section class="search-panel" aria-labelledby="search-title">
         <div>
-          <p class="eyebrow" data-i18n="historicalRainfall">historical rainfall · 1991–2020</p>
+          <p class="eyebrow" data-i18n="historicalClimate">historical climate · 1991–2020</p>
           <h1 id="search-title" data-i18n="searchTitle">check a location in Madagascar</h1>
         </div>
 
@@ -56,21 +56,21 @@
       </section>
 
       <aside class="fixture-notice" role="note">
-        <strong data-i18n="rainfallDemo">rainfall demo</strong>
-        <span data-i18n="demoNote">1991–2020 historical CHIRPS rainfall. temperature and current-season comparisons are coming later; this is not a forecast.</span>
+        <strong data-i18n="climateBaseline">climate baseline</strong>
+        <span data-i18n="demoNote">1991–2020 historical CHIRPS rainfall and ERA5-Land temperature. this is not a forecast.</span>
       </aside>
 
       <section id="report" class="report" aria-live="polite" aria-busy="true">
         <header class="report-header">
           <div>
             <p class="eyebrow" id="report-region" data-i18n="loadingLocation">loading location</p>
-            <h2 id="report-title" data-i18n="rainfallReport">rainfall report</h2>
+            <h2 id="report-title" data-i18n="climateReport">climate report</h2>
             <p class="coordinates" id="report-coordinates"></p>
           </div>
           <div class="freshness">
             <span data-i18n="baseline">historical baseline</span>
             <strong>1991–2020</strong>
-            <span>CHIRPS Final</span>
+            <span>CHIRPS · ERA5-Land</span>
           </div>
         </header>
 
@@ -84,6 +84,16 @@
             <span data-i18n="dryRisk">highest 10-day dry-spell risk</span>
             <strong id="dry-risk">—</strong>
             <small id="dry-season">—</small>
+          </article>
+          <article class="summary-card temp-high-card">
+            <span data-i18n="warmestHigh">warmest typical daytime high</span>
+            <strong id="warmest-high">—</strong>
+            <small id="warmest-month">—</small>
+          </article>
+          <article class="summary-card temp-low-card">
+            <span data-i18n="coolestLow">coolest typical nighttime low</span>
+            <strong id="coolest-low">—</strong>
+            <small id="coolest-month">—</small>
           </article>
         </div>
 
@@ -111,6 +121,28 @@
           </div>
         </article>
 
+        <article class="chart-section temperature-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="historicalTemperature">historical temperature</p>
+              <h3 data-i18n="yearTemperature">heat through the year</h3>
+            </div>
+            <div class="temperature-legend" aria-hidden="true">
+              <span><i class="temperature-high-key"></i><span data-i18n="dailyMaximum">daily maximum</span></span>
+              <span><i class="temperature-low-key"></i><span data-i18n="dailyMinimum">daily minimum</span></span>
+            </div>
+          </div>
+          <div id="temperature-chart" class="chart" role="img" aria-label="monthly mean daily minimum and maximum temperature on a fixed zero to 40 degree Celsius axis" data-i18n-aria-label="temperatureChartAria"></div>
+          <p class="chart-note" data-i18n="temperatureChartNote">the fixed 0–40 °C axis makes heat directly comparable between locations. the shaded band spans the mean daily minimum to maximum.</p>
+          <div class="chart-table-wrap">
+            <table id="temperature-table">
+              <caption class="visually-hidden" data-i18n="temperatureTableCaption">monthly mean daily minimum and maximum temperature</caption>
+              <thead><tr><th data-i18n="month">month</th><th data-i18n="dailyMinimum">daily minimum</th><th data-i18n="dailyMaximum">daily maximum</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+
         <article class="interpretation-section">
           <p class="eyebrow" data-i18n="fieldInterpretation">field interpretation</p>
           <h3 data-i18n="patternSuggests">what the pattern suggests</h3>
@@ -131,7 +163,8 @@
           <p><strong data-i18n="methodRainLabel">rainfall:</strong> <span data-i18n="methodRain">CHIRPS Final at 0.05° resolution, using 1991–2020 data. coordinate lookups use the nearest land cell within 12 km. small areas and complex terrain may differ from the cell average.</span></p>
           <p><strong data-i18n="methodRangeLabel">typical range:</strong> <span data-i18n="methodRange">the 10th to 90th percentile of that calendar month's rainfall totals across 1991–2020. it describes past variation, not a forecast interval.</span></p>
           <p><strong data-i18n="methodFrequencyLabel">rain frequency:</strong> <span data-i18n="methodFrequency">a rainy day has at least 1 mm. a heavy-rain day has at least 20 mm. both columns show the mean number of days per month across the baseline years.</span></p>
-          <p><strong data-i18n="methodRoundingLabel">rounding:</strong> <span data-i18n="methodRounding">displayed rainfall totals, ranges, and wet-day intensity are rounded to the nearest whole millimetre. mean rainy-day and heavy-rain-day counts are rounded to the nearest whole day. calculations and chart positions still use the unrounded values.</span></p>
+          <p><strong data-i18n="methodTemperatureLabel">temperature:</strong> <span data-i18n="methodTemperature">ERA5-Land at 0.1° resolution, using 1991–2020 data. each monthly low is the mean of daily minimum temperatures; each high is the mean of daily maximum temperatures.</span></p>
+          <p><strong data-i18n="methodRoundingLabel">rounding:</strong> <span data-i18n="methodRounding">displayed rainfall totals, ranges, and wet-day intensity are rounded to the nearest whole millimetre. mean rainy-day and heavy-rain-day counts are rounded to the nearest whole day, and temperatures to the nearest whole degree Celsius. calculations and chart positions still use the unrounded values.</span></p>
           <p><strong data-i18n="methodPlacesLabel">place names:</strong> <span data-i18n="methodPlacesBefore">settlement search uses</span> <a href="https://www.geonames.org/" rel="external">GeoNames</a> <span data-i18n="methodPlacesAfter">data (CC BY). enter coordinates if the local name is missing or ambiguous.</span></p>
         </div>
       </section>

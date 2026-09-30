@@ -1,12 +1,12 @@
 # Methodology contract
 
-Status: rainfall demo released; temperature and current season planned
+Status: rainfall and temperature baseline released; current season planned
 
-Version: 0.3.0-rainfall-demo
+Version: 0.4.0-climate-baseline
 
 ## Product boundary
 
-This release describes historical rainfall patterns from 1991–2020. It is not a weather forecast, seasonal forecast, crop model, or guarantee of planting success. Temperature and recent observations are planned.
+This release describes historical rainfall and temperature patterns from 1991–2020. It is not a weather forecast, seasonal forecast, crop model, or guarantee of planting success. Recent observations are planned.
 
 ## Sources
 
@@ -24,7 +24,7 @@ This release describes historical rainfall patterns from 1991–2020. It is not 
 
 ## Reference period
 
-- Proposed climate normal: 1991-01-01 through 2020-12-31.
+- Climate normal: 1991-01-01 through 2020-12-31.
 - Baseline releases are immutable and versioned.
 - Changing the normal period requires a new methodology version and baseline release.
 
@@ -44,13 +44,16 @@ This release describes historical rainfall patterns from 1991–2020. It is not 
 
 - Rainfall totals, percentile ranges, and wet-day intensity are displayed to the nearest whole millimetre.
 - Mean rainy-day and heavy-rain-day frequencies are displayed to the nearest whole day.
+- Monthly temperatures are displayed to the nearest whole degree Celsius.
 - Rounding is presentation-only. Calculations, thresholds, comparisons, and chart geometry use the unrounded baseline values.
 
 ## Temperature definitions
 
 - Monthly minimum temperature: mean of daily minimum temperature for the month, averaged across complete years.
 - Monthly maximum temperature: mean of daily maximum temperature for the month, averaged across complete years.
-- Temperature variability: 10th and 90th percentiles of the applicable daily or monthly statistic, explicitly labeled in the report.
+- The chart's shaded band spans these two monthly means; it is not a variability or forecast interval.
+- Temperature is shown on a fixed 0–40 °C axis so locations remain directly comparable.
+- The entered coordinate is mapped independently to the nearest ERA5-Land land cell, at most 20 km away; no interpolation is presented.
 
 ## Rainfall onset and cessation
 

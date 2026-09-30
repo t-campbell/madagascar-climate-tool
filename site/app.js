@@ -3,11 +3,14 @@ import { displayMonth, language, subscribeLanguageChange, t } from "./i18n.js";
 const MONTHS = Array.from({ length: 12 }, (_, index) => index);
 // The 1991–2020 national CHIRPS land-cell baseline peaks at 800.1 mm/month.
 const RAIN_AXIS_MAX_MM = 1000;
+const TEMPERATURE_AXIS_MIN_C = 0;
+const TEMPERATURE_AXIS_MAX_C = 40;
 const MADAGASCAR_BOUNDS = { south: -26, north: -11, west: 43, east: 51 };
 
 const locale = () => language() === "mg" ? "mg-MG" : "en";
 const formatMillimeters = (value) => Math.round(value).toLocaleString(locale());
 const formatDays = (value) => Math.round(value).toLocaleString(locale());
+const formatTemperature = (value) => Math.round(value).toLocaleString(locale());
 
 const elements = {
   report: document.querySelector("#report"),
@@ -24,11 +27,17 @@ const elements = {
   rainSeason: document.querySelector("#rain-season"),
   dryRisk: document.querySelector("#dry-risk"),
   drySeason: document.querySelector("#dry-season"),
+  warmestHigh: document.querySelector("#warmest-high"),
+  warmestMonth: document.querySelector("#warmest-month"),
+  coolestLow: document.querySelector("#coolest-low"),
+  coolestMonth: document.querySelector("#coolest-month"),
   rainChart: document.querySelector("#rain-chart"),
+  temperatureChart: document.querySelector("#temperature-chart"),
   showRainfall: document.querySelector("#show-rainfall"),
   showRainyDays: document.querySelector("#show-rainy-days"),
   showHeavyDays: document.querySelector("#show-heavy-days"),
   rainTableBody: document.querySelector("#rain-table tbody"),
+  temperatureTableBody: document.querySelector("#temperature-table tbody"),
   interpretationList: document.querySelector("#interpretation-list"),
   cellDetails: document.querySelector("#cell-details"),
   offlineStatus: document.querySelector("#offline-status"),
@@ -68,19 +77,14 @@ function distanceKm(aLat, aLon, bLat, bLon) {
   return 12742 * Math.asin(Math.sqrt(a));
 }
 
-async function loadTile(tileId) {
-  const path = manifest.tileTemplate.replace("{tileId}", tileId);
+async function loadTile(tileId, template, errorKey) {
+  const path = template.replace("{tileId}", tileId);
   const response = await fetch(path);
-  if (!response.ok) throw new Error(t("noCell"));
+  if (!response.ok) throw new Error(t(errorKey));
   return response.json();
 }
 
-async function loadCoordinate(lat, lon, place = null) {
-  if (!withinMadagascar(lat, lon)) {
-    throw new Error(t("outsideCoverage"));
-  }
-  const tileId = tileIdFor(lat, lon);
-  const tile = await loadTile(tileId);
+function nearestInTile(tile, lat, lon) {
   let nearest = null;
   for (const cell of tile.cells) {
     const cellLat = tile.lat[cell[0]];
@@ -88,10 +92,27 @@ async function loadCoordinate(lat, lon, place = null) {
     const distance = distanceKm(lat, lon, cellLat, cellLon);
     if (!nearest || distance < nearest.distance) nearest = { cell, lat: cellLat, lon: cellLon, distance };
   }
-  if (!nearest || nearest.distance > manifest.maxCellDistanceKm) {
+  return nearest;
+}
+
+async function loadCoordinate(lat, lon, place = null) {
+  if (!withinMadagascar(lat, lon)) {
+    throw new Error(t("outsideCoverage"));
+  }
+  const tileId = tileIdFor(lat, lon);
+  const [rainTile, temperatureTile] = await Promise.all([
+    loadTile(tileId, manifest.tileTemplate, "noCell"),
+    loadTile(tileId, manifest.temperatureTileTemplate, "noTemperatureCell"),
+  ]);
+  const rain = nearestInTile(rainTile, lat, lon);
+  const temperature = nearestInTile(temperatureTile, lat, lon);
+  if (!rain || rain.distance > manifest.maxCellDistanceKm) {
     throw new Error(t("noCell12"));
   }
-  renderReport(nearest, { requestedLat: lat, requestedLon: lon, tileId, place });
+  if (!temperature || temperature.distance > manifest.maxTemperatureCellDistanceKm) {
+    throw new Error(t("noTemperatureCell20"));
+  }
+  renderReport({ rain, temperature }, { requestedLat: lat, requestedLon: lon, tileId, place });
 }
 
 function shardFor(query) {
@@ -290,6 +311,61 @@ function renderRainChart(values, rainyDays, heavyRainDays) {
     : t("chartNone"));
 }
 
+function renderTemperatureChart(minimum, maximum) {
+  const width = 760;
+  const height = 250;
+  const margin = { top: 22, right: 24, bottom: 34, left: 44 };
+  const plotWidth = width - margin.left - margin.right;
+  const plotHeight = height - margin.top - margin.bottom;
+  const slot = plotWidth / minimum.length;
+  const y = (value) => margin.top + plotHeight * (
+    1 - (value - TEMPERATURE_AXIS_MIN_C) / (TEMPERATURE_AXIS_MAX_C - TEMPERATURE_AXIS_MIN_C)
+  );
+  const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, "aria-hidden": "true" });
+
+  for (let value = TEMPERATURE_AXIS_MIN_C; value <= TEMPERATURE_AXIS_MAX_C; value += 10) {
+    const tickY = y(value);
+    svg.append(svgElement("line", { x1: margin.left, x2: width - margin.right, y1: tickY, y2: tickY, class: "axis" }));
+    const label = svgElement("text", { x: margin.left - 8, y: tickY + 4, "text-anchor": "end" });
+    label.textContent = `${value}`;
+    svg.append(label);
+  }
+
+  const upper = maximum.map((value, index) => `${margin.left + (index + 0.5) * slot},${y(value)}`);
+  const lower = minimum.map((value, index) => `${margin.left + (index + 0.5) * slot},${y(value)}`).reverse();
+  svg.append(svgElement("polygon", { points: [...upper, ...lower].join(" "), class: "temperature-band" }));
+  for (const [values, className, tooltipKey] of [
+    [maximum, "temperature-high-line", "temperatureHighTooltip"],
+    [minimum, "temperature-low-line", "temperatureLowTooltip"],
+  ]) {
+    const points = values.map((value, index) => ({
+      x: margin.left + (index + 0.5) * slot,
+      y: y(value),
+    }));
+    svg.append(svgElement("polyline", {
+      points: points.map(({ x, y: pointY }) => `${x},${pointY}`).join(" "),
+      class: className,
+    }));
+    points.forEach(({ x, y: pointY }, index) => {
+      const dot = svgElement("circle", { cx: x, cy: pointY, r: 4, class: `${className}-dot` });
+      const title = svgElement("title");
+      title.textContent = t(tooltipKey, { month: displayMonth(index), value: formatTemperature(values[index]) });
+      dot.append(title);
+      svg.append(dot);
+    });
+  }
+  MONTHS.forEach((index) => {
+    const label = svgElement("text", { x: margin.left + (index + 0.5) * slot, y: height - 12, "text-anchor": "middle" });
+    label.textContent = displayMonth(index);
+    svg.append(label);
+  });
+  const unit = svgElement("text", { x: margin.left - 8, y: 13, "text-anchor": "end" });
+  unit.textContent = "°C";
+  svg.append(unit);
+  elements.temperatureChart.replaceChildren(svg);
+  elements.temperatureChart.setAttribute("aria-label", t("temperatureChartAria"));
+}
+
 for (const control of [elements.showRainfall, elements.showRainyDays, elements.showHeavyDays]) {
   control.addEventListener("change", () => {
     if (latestRainChartData) renderRainChart(
@@ -331,16 +407,19 @@ function buildInterpretation(rain, heavyRainDays, risk) {
 
 function renderReport(nearest, request) {
   latestReport = { nearest, request };
-  const [,, rain, p10, p90, rainyDays, heavyRainDays, wetIntensity, dryRisk] = nearest.cell;
+  const [,, rain, p10, p90, rainyDays, heavyRainDays, wetIntensity, dryRisk] = nearest.rain.cell;
+  const [,, minimumTemperature, maximumTemperature] = nearest.temperature.cell;
   const wettestIndex = rain.indexOf(Math.max(...rain));
   const highestRiskIndex = dryRisk.indexOf(Math.max(...dryRisk));
   const highestHeavyIndex = heavyRainDays.indexOf(Math.max(...heavyRainDays));
   const annual = rain.reduce((sum, value) => sum + value, 0);
+  const warmestIndex = maximumTemperature.indexOf(Math.max(...maximumTemperature));
+  const coolestIndex = minimumTemperature.indexOf(Math.min(...minimumTemperature));
 
   elements.reportRegion.textContent = request.place
     ? [request.place.district, request.place.region].filter(Boolean).join(", ") || "Madagascar"
     : t("coordinateLookup");
-  elements.reportTitle.textContent = request.place ? request.place.name : t("coordinateRainfall");
+  elements.reportTitle.textContent = request.place ? request.place.name : t("coordinateClimate");
   elements.reportCoordinates.textContent = t("requested", {
     lat: request.requestedLat.toFixed(4),
     lon: request.requestedLon.toFixed(4),
@@ -352,13 +431,21 @@ function renderReport(nearest, request) {
   });
   elements.dryRisk.textContent = `${Math.round(dryRisk[highestRiskIndex] * 100)}%`;
   elements.drySeason.textContent = t("highestIn", { month: displayMonth(highestRiskIndex) });
+  elements.warmestHigh.textContent = `${formatTemperature(maximumTemperature[warmestIndex])} °C`;
+  elements.warmestMonth.textContent = t("highestIn", { month: displayMonth(warmestIndex) });
+  elements.coolestLow.textContent = `${formatTemperature(minimumTemperature[coolestIndex])} °C`;
+  elements.coolestMonth.textContent = t("lowestIn", { month: displayMonth(coolestIndex) });
   elements.cellDetails.textContent = t("cellDetails", {
-    lat: nearest.lat.toFixed(4),
-    lon: nearest.lon.toFixed(4),
-    distance: nearest.distance.toFixed(1),
+    rainLat: nearest.rain.lat.toFixed(4),
+    rainLon: nearest.rain.lon.toFixed(4),
+    rainDistance: nearest.rain.distance.toFixed(1),
+    temperatureLat: nearest.temperature.lat.toFixed(4),
+    temperatureLon: nearest.temperature.lon.toFixed(4),
+    temperatureDistance: nearest.temperature.distance.toFixed(1),
   });
 
   renderRainChart(rain, rainyDays, heavyRainDays);
+  renderTemperatureChart(minimumTemperature, maximumTemperature);
   elements.rainTableBody.replaceChildren(...MONTHS.map((index) => {
     const row = document.createElement("tr");
     for (const value of [
@@ -368,6 +455,19 @@ function renderReport(nearest, request) {
       formatDays(rainyDays[index]),
       formatDays(heavyRainDays[index]),
       `${formatMillimeters(wetIntensity[index])} mm`,
+    ]) {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.append(cell);
+    }
+    return row;
+  }));
+  elements.temperatureTableBody.replaceChildren(...MONTHS.map((index) => {
+    const row = document.createElement("tr");
+    for (const value of [
+      displayMonth(index),
+      `${formatTemperature(minimumTemperature[index])} °C`,
+      `${formatTemperature(maximumTemperature[index])} °C`,
     ]) {
       const cell = document.createElement("td");
       cell.textContent = value;
@@ -437,7 +537,7 @@ async function initialize() {
     const manifestResponse = await fetch("data/manifest.json");
     if (!manifestResponse.ok) throw new Error(t("manifestUnavailable"));
     manifest = await manifestResponse.json();
-    if (manifest.status !== "rainfall-baseline") throw new Error(t("unexpectedData"));
+    if (manifest.status !== "climate-baseline") throw new Error(t("unexpectedData"));
     manifest.searchPrefixesSet = new Set(manifest.searchPrefixes);
     await loadCoordinate(manifest.defaultLocation.lat, manifest.defaultLocation.lon, manifest.defaultLocation);
   } catch (error) {

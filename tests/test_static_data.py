@@ -11,9 +11,10 @@ class StaticDataTests(unittest.TestCase):
     def setUpClass(cls):
         cls.manifest = json.loads((ROOT / "data/manifest.json").read_text())
         cls.tiles = ROOT / "data/rainfall/tiles"
+        cls.temperature_tiles = ROOT / "data/temperature/tiles"
 
     def test_national_tiles_and_place_index(self):
-        self.assertEqual(self.manifest["status"], "rainfall-baseline")
+        self.assertIn(self.manifest["status"], {"rainfall-baseline", "climate-baseline"})
         self.assertEqual(self.manifest["rainfall"]["validLandCells"], 22526)
         self.assertGreater(self.manifest["gazetteer"]["placeCount"], 20000)
         self.assertGreater(len(list(self.tiles.glob("*.json"))), 80)
@@ -32,6 +33,21 @@ class StaticDataTests(unittest.TestCase):
                 self.assertTrue(all(low <= high for low, high in zip(cell[3], cell[4])))
                 self.assertTrue(all(heavy <= rainy + 0.1 for heavy, rainy in zip(cell[6], cell[5])))
                 self.assertTrue(all(0 <= value <= 1 for value in cell[8]))
+
+    def test_temperature_tiles_when_published(self):
+        if self.manifest["status"] != "climate-baseline":
+            self.skipTest("temperature baseline has not been published yet")
+        self.assertEqual(self.manifest["temperature"]["validLandCells"], 5096)
+        self.assertGreater(len(list(self.temperature_tiles.glob("*.json"))), 80)
+        for tile_path in self.temperature_tiles.glob("*.json"):
+            tile = json.loads(tile_path.read_text())
+            self.assertEqual(tile["id"], tile_path.stem)
+            for cell in tile["cells"]:
+                self.assertEqual(len(cell), 4)
+                self.assertEqual(len(cell[2]), 12)
+                self.assertEqual(len(cell[3]), 12)
+                self.assertTrue(all(low <= high for low, high in zip(cell[2], cell[3])))
+                self.assertTrue(all(-15 <= value <= 50 for values in cell[2:] for value in values))
 
     def test_static_source_budget(self):
         total = sum(path.stat().st_size for path in (ROOT / "site").glob("*.*"))

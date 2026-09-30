@@ -1,17 +1,18 @@
 # Madagascar climate field guide
 
-A low-bandwidth climate reference for agriculture volunteers and extension staff in Madagascar. Search for a settlement, enter coordinates, or use device location to retrieve historical rainfall patterns from precomputed geographic tiles.
+A low-bandwidth climate reference for agriculture volunteers and extension staff in Madagascar. Search for a settlement, enter coordinates, or use device location to retrieve historical rainfall and temperature patterns from precomputed geographic tiles.
 
 ## Current status
 
-The rainfall demo uses actual CHIRPS v3 Final daily data for 1991–2020 across Madagascar. Monthly mean rainfall, 10th–90th percentile range, days with ≥1 mm, days with ≥20 mm, wet-day intensity, and 10-day dry-spell risk are available at the nearest 0.05° land cell (within 12 km). Temperature and current-season observations are deferred. This historical reference is not a forecast.
+The released baseline uses CHIRPS v3 Final rainfall and ERA5-Land temperature data for 1991–2020 across Madagascar. Rainfall metrics are available at the nearest 0.05° land cell (within 12 km); monthly mean daily minimum and maximum temperature are available at the nearest 0.1° land cell (within 20 km). Current-season observations remain deferred. This historical reference is not a forecast.
 
 ## Architecture
 
 - Plain static HTML, CSS, and JavaScript.
 - No runtime server, database, user account, or external browser API.
-- Only the historical rainfall baseline is displayed in this release.
+- Historical rainfall and temperature baselines are displayed in this release.
 - Rainfall remains on the native CHIRPS 0.05 degree grid.
+- Temperature remains on the native ERA5-Land 0.1 degree grid.
 - Data are divided into 1 degree tiles with a 0.15 degree halo.
 - GeoNames Madagascar settlements are split into small prefix search files and downloaded on demand; coordinates also work for unnamed sites.
 - A service worker caches the application, previously requested tiles, and searched place lists.
