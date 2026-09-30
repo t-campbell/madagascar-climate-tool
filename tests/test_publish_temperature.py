@@ -3,11 +3,15 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import numpy as np
+try:
+    import numpy as np
+except ModuleNotFoundError:
+    np = None
 
 from pipeline.publish_temperature import publish
 
 
+@unittest.skipIf(np is None, "numpy is only required by the publication pipeline")
 class PublishTemperatureTests(unittest.TestCase):
     def test_writes_tiles_and_updates_manifest(self):
         with tempfile.TemporaryDirectory() as directory:

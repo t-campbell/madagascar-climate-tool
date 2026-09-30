@@ -2,9 +2,6 @@ name: publish temperature baseline
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - .github/workflows/publish-temperature-baseline.yml
 
 permissions:
   actions: read

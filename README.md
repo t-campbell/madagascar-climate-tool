@@ -36,6 +36,10 @@ npm run check
 
 `.github/workflows/publish-rainfall-demo.yml` retrieves the successful national CHIRPS baseline artifact from run 34862522613, downloads the [GeoNames MG dump](https://download.geonames.org/export/dump/), generates static tiles and search shards, checks and builds the site, commits the release, and deploys it. The artifact expires October 14, 2026; for future regenerations retain a durable baseline or rerun the CHIRPS pipeline. No CDS token is required for this rainfall-only release. Place names © GeoNames, CC BY; attribution appears on the site.
 
+## Temperature data release
+
+`.github/workflows/publish-temperature-baseline.yml` rebuilds the national ERA5-Land normal from the 30 durable annual partials in the `era5-land-annual-partials-v1` release, validates and preserves the merged baseline, generates 0.1 degree temperature tiles, checks the complete site, and deploys it. It recovers existing release assets and does not submit CDS requests.
+
 ## Account setup
 
 The production workflows expect these GitHub repository secrets:
