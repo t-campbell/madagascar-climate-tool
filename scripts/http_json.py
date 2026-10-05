@@ -3,7 +3,10 @@ import json
 import subprocess
 
 
-def fetch_json(url):
+def fetch_json(url, publication=None):
+    if publication:
+        from urllib.parse import urlencode
+        url += ("&" if "?" in url else "?") + urlencode({"publication": publication})
     result = subprocess.run(['curl', '--fail', '--silent', '--show-error', '--retry', '3', '--retry-delay', '2',
                              '--connect-timeout', '15', '--max-time', '45',
                              '--header', 'Cache-Control: no-cache', '--header', 'Accept: application/json', url],

@@ -3,6 +3,8 @@ import argparse
 from datetime import date
 import json
 import math
+import subprocess
+import time
 from pathlib import Path
 from scripts.http_json import fetch_json
 
@@ -11,9 +13,11 @@ from pipeline.chirps_monthly import expected_latest, shift_month
 POINTS = [("Fenoarivo", -17.38095, 49.40826), ("Antananarivo", -18.8792, 47.5079), ("Toliara", -23.351, 43.6714)]
 
 
-def verify(load):
+def verify(load, expected=None):
     manifest = load("data/manifest.json")
     recent = manifest["recentRainfall"]
+    if expected and recent["release"] != expected:
+        raise ValueError("deployed release has not reached this edge yet")
     if manifest["status"] != "climate-baseline" or "temperature" not in manifest:
         raise ValueError("historical temperature/rainfall references were lost")
     months = recent["months"]
@@ -54,12 +58,22 @@ def main():
     group.add_argument("--directory", type=Path)
     group.add_argument("--base-url")
     parser.add_argument("--freshness", action="store_true")
+    parser.add_argument("--expected-release")
+    parser.add_argument("--attempts", type=int, default=12)
     args = parser.parse_args()
     def load(path):
         if args.directory:
             return json.loads((args.directory / path).read_text())
-        return fetch_json(args.base_url.rstrip("/") + "/" + path)
-    recent = verify(load)
+        return fetch_json(args.base_url.rstrip("/") + "/" + path, args.expected_release if path in {"data/manifest.json", "data/update-status.json"} else None)
+    for attempt in range(1 if args.directory else args.attempts):
+        try:
+            recent = verify(load, args.expected_release)
+            break
+        except (KeyError, ValueError, subprocess.CalledProcessError) as error:
+            if args.directory or attempt + 1 == args.attempts:
+                raise
+            print(f"edge verification not ready ({error}); retrying", flush=True)
+            time.sleep(5)
     if args.freshness and recent["months"][-1] < expected_latest(date.today()):
         raise SystemExit("rainfall data-through date is older than the normal Final release schedule")
 

@@ -174,8 +174,8 @@ th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-
   .chart-section, .interpretation-section { break-inside: avoid; }
 }
 
-.recent-actual-key { background: #357ba4; }
-.recent-normal-key { background: #9a5823; }
+.recent-actual-key { display: inline-block; flex-shrink: 0; width: 12px; height: 12px; background: var(--blue); }
+.recent-normal-key { display: inline-block; flex-shrink: 0; width: 16px; height: 3px; background: #9a5823; }
 .recent-normal-line { fill: none; stroke: #9a5823; stroke-width: 2.5; }
 .recent-section .freshness { margin: 0; }
 .recent-section .temperature-legend { margin-bottom: 1rem; }

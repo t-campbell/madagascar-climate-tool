@@ -73,11 +73,12 @@ def snapshot():
 
 
 def decide():
+    candidate = json.loads(Path('data/update-status.json').read_text())
+    print('release=' + candidate['release'])
     changed = bool(subprocess.run(['git', 'status', '--porcelain', '--', 'data'], check=True, capture_output=True, text=True).stdout.strip())
-    if changed:
+    if changed or os.environ.get('FORCE_DEPLOY', '').lower() == 'true':
         print('publish=true')
         return
-    candidate = json.loads(Path('data/update-status.json').read_text())
     try:
         live = fetch_json(os.environ['PRODUCTION_URL'] + '/data/update-status.json')
     except json.JSONDecodeError:
