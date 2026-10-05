@@ -4,7 +4,7 @@ from datetime import date
 import json
 import math
 from pathlib import Path
-from urllib.request import Request, urlopen
+from scripts.http_json import fetch_json
 
 from pipeline.chirps_monthly import expected_latest, shift_month
 
@@ -58,9 +58,7 @@ def main():
     def load(path):
         if args.directory:
             return json.loads((args.directory / path).read_text())
-        request = Request(args.base_url.rstrip("/") + "/" + path, headers={"Cache-Control": "no-cache"})
-        with urlopen(request, timeout=45) as response:
-            return json.load(response)
+        return fetch_json(args.base_url.rstrip("/") + "/" + path)
     recent = verify(load)
     if args.freshness and recent["months"][-1] < expected_latest(date.today()):
         raise SystemExit("rainfall data-through date is older than the normal Final release schedule")

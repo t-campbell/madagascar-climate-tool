@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
-from urllib.request import Request, urlopen
+from scripts.http_json import fetch_json
 import zipfile
 
 RELEASE = "chirps-monthly-v1"
@@ -23,7 +23,8 @@ def release_assets():
     for page in releases:
         for release in page:
             if release["tag_name"] == RELEASE:
-                return release["assets"]
+                pages = json.loads(gh("api", f"repos/{os.environ['GH_REPO']}/releases/{release['id']}/assets", "--paginate", "--slurp"))
+                return [asset for page in pages for asset in page]
     gh("release", "create", RELEASE, "--title", "CHIRPS Final monthly reductions v1", "--notes",
        "Validated complete monthly Madagascar reductions and immutable publication snapshots. SHA-256 checksums accompany every monthly reduction.")
     return []
@@ -77,10 +78,8 @@ def decide():
         print('publish=true')
         return
     candidate = json.loads(Path('data/update-status.json').read_text())
-    request = Request(os.environ['PRODUCTION_URL'] + '/data/update-status.json', headers={'Cache-Control': 'no-cache'})
     try:
-        with urlopen(request, timeout=45) as response:
-            live = json.load(response)
+        live = fetch_json(os.environ['PRODUCTION_URL'] + '/data/update-status.json')
     except json.JSONDecodeError:
         # Before this feature exists, the SPA returns HTML for the new endpoint.
         live = {}
