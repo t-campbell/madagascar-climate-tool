@@ -226,7 +226,17 @@ def publish(baseline: Path, gazetteer: Path, output: Path) -> dict[str, object]:
         "defaultLocation": {"name": "Fenoarivo Atsinanana", "lat": -17.38095, "lon": 49.40826},
         "maxCellDistanceKm": MAX_CELL_DISTANCE_KM,
     }
-    _write_json(output / "manifest.json", manifest)
+    existing_path = output / "manifest.json"
+    if existing_path.exists():
+        existing = json.loads(existing_path.read_text())
+        if "recentRainfall" in existing and existing["rainfall"]["baselineSha256"] != manifest["rainfall"]["baselineSha256"]:
+            raise ValueError("a changed rainfall baseline requires rebuilding recent observations")
+        if "temperature" in existing:
+            manifest = {**existing, **manifest}
+            manifest["schemaVersion"] = existing["schemaVersion"]
+            manifest["productVersion"] = existing["productVersion"]
+            manifest["status"] = "climate-baseline"
+    _write_json(existing_path, manifest)
     return {"tiles": len(tile_ids), "places": len(searchable), "shards": len(shard_keys), "baselineSha256": manifest["rainfall"]["baselineSha256"]}
 
 

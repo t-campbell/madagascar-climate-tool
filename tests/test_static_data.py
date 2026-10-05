@@ -1,4 +1,6 @@
 import json
+import calendar
+import math
 from pathlib import Path
 import unittest
 
@@ -52,6 +54,29 @@ class StaticDataTests(unittest.TestCase):
     def test_static_source_budget(self):
         total = sum(path.stat().st_size for path in (ROOT / "site").glob("*.*"))
         self.assertLess(total, 250_000)
+
+    def test_recent_publication_when_available(self):
+        recent = self.manifest.get("recentRainfall")
+        if not recent:
+            self.skipTest("recent monthly data not published yet")
+        self.assertEqual(recent["status"], "final")
+        self.assertEqual(recent["baselineSha256"], self.manifest["rainfall"]["baselineSha256"])
+        self.assertEqual(len(recent["months"]), 12)
+        root = ROOT / "data/recent-rainfall/releases" / recent["release"]
+        tiles = list(root.glob("S*.json"))
+        self.assertEqual(len(tiles), recent["tiles"])
+        self.assertGreater(len(tiles), 80)
+        limits = [calendar.monthrange(*map(int, month.split("-")))[1] for month in recent["months"]]
+        for path in tiles:
+            tile = json.loads(path.read_text())
+            self.assertEqual(tile["release"], recent["release"])
+            self.assertEqual(tile["months"], recent["months"])
+            self.assertLess(path.stat().st_size, 500_000)
+            for cell in tile["cells"]:
+                self.assertEqual(len(cell), 5)
+                self.assertTrue(all(len(series) == 12 for series in cell[2:]))
+                self.assertTrue(all(math.isfinite(v) and 0 <= v <= recent["axisMaxMm"] for v in cell[2]))
+                self.assertTrue(all(isinstance(h, int) and isinstance(r, int) and 0 <= h <= r <= limit for h, r, limit in zip(cell[4], cell[3], limits)))
 
 
 if __name__ == "__main__":

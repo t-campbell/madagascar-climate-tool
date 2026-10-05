@@ -1,0 +1,98 @@
+name: update monthly rainfall
+
+on:
+  workflow_dispatch:
+  # Removed after the first verified end-to-end run.
+  push:
+    branches: [main]
+    paths: [.github/workflows/update-monthly-rainfall.yml]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: monthly-rainfall-production
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ github.token }}
+  GH_REPO: ${{ github.repository }}
+  PRODUCTION_URL: https://madagascar-climate-field-guide.mada-climate-tool.workers.dev
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: install processing dependencies
+        run: python -m pip install 'numpy>=2,<3' 'rasterio>=1.4,<2'
+      - name: restore durable baseline and monthly reductions
+        run: |
+          gh release download chirps-baseline-v1 -D /tmp/chirps-baseline
+          (cd /tmp/chirps-baseline && sha256sum -c SHA256SUMS)
+          python -m scripts.monthly_release restore --cache /tmp/chirps-months
+      - name: acquire and preserve complete Final months
+        id: acquire
+        run: |
+          python -m pipeline.chirps_monthly --baseline /tmp/chirps-baseline/chirps-1991-2020.npz --cache /tmp/chirps-months --archive-release chirps-monthly-v1
+          python -m scripts.monthly_release snapshot
+          python -m scripts.monthly_release decide >> "$GITHUB_OUTPUT"
+      - name: validate candidate
+        run: |
+          npm run check
+          npm run build
+          python -m scripts.verify_recent --directory dist
+      - name: deploy candidate to staging
+        if: steps.acquire.outputs.publish == 'true'
+        id: staging
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --name madagascar-climate-field-guide-staging
+      - name: verify staged data
+        if: steps.acquire.outputs.publish == 'true'
+        env:
+          STAGING_URL: ${{ steps.staging.outputs.deployment-url }}
+        run: python -m scripts.verify_recent --base-url "$STAGING_URL"
+      - name: record verified publication
+        if: steps.acquire.outputs.publish == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish complete CHIRPS Final monthly rainfall'
+            git push origin HEAD:main
+          fi
+      - name: deploy production
+        if: steps.acquire.outputs.publish == 'true'
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: verify production
+        run: python -m scripts.verify_recent --base-url "$PRODUCTION_URL"
+      - name: update failure or source-delay alert
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          RUN_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: python -m scripts.monthly_release alert
+      - name: preserve diagnostic summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: monthly-rainfall-diagnostics-${{ github.run_id }}
+          path: update-summary.json
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,12 +1,12 @@
 # Methodology contract
 
-Status: rainfall and temperature baseline released; current season planned
+Status: rainfall and temperature baselines plus recent Final rainfall
 
-Version: 0.4.0-climate-baseline
+Version: 0.5.0-monthly-rainfall
 
 ## Product boundary
 
-This release describes historical rainfall and temperature patterns from 1991–2020. It is not a weather forecast, seasonal forecast, crop model, or guarantee of planting success. Recent observations are planned.
+This release describes historical rainfall and temperature patterns from 1991–2020. It is not a weather forecast, seasonal forecast, crop model, or guarantee of planting success. A separate panel reports recent complete rainfall months.
 
 ## Sources
 
@@ -61,14 +61,17 @@ Onset and cessation rules vary by cropping system and region. Version 0.1 will n
 
 This restraint is intentional. One national onset rule would create precise-looking nonsense across Madagascar's sharply different climates.
 
-## Current-season observations
+## Recent rainfall observations
 
-- CHIRPS Preliminary and Final values are stored separately from the historical baseline.
-- Preliminary values are visibly labeled provisional.
-- Final values replace the corresponding preliminary period after validation.
-- Current-season panels display the latest included observation date.
-- An anomaly is calculated against the matching baseline period, not against a whole-year average.
-- Failed updates do not replace the active release.
+- The rolling panel contains twelve consecutive complete calendar months of CHIRPS v3 Final RNL, separate from the fixed 1991–2020 normal.
+- A month is accepted only when every daily file and every baseline land cell is present on the aligned native 0.05 degree grid.
+- Monthly totals sum daily values; rainy and heavy-rain days count days at the same ≥1 mm and ≥20 mm thresholds as the baseline.
+- Daily CHIRPS values are disaggregated estimates; day counts are indicative rather than local rain-gauge observations.
+- Each observed month is compared with its corresponding calendar-month normal at the exact same CHIRPS cell. Differences are shown in whole mm and whole percent, calculated before display rounding. Percent is omitted when the normal is below 1 mm.
+- Final usually follows in the third week of the next month. Weekly checks allow through day 27 before treating the normal release lag as overdue.
+- The panel and offline reports display the last included observation date. Offline data can be older than the live publication.
+- The recent chart uses one national scale for the whole publication: at least 1,000 mm, enlarged in 250 mm steps if any actual monthly total exceeds it. The historical chart retains its fixed 1,000 mm scale.
+- Failed acquisition or validation keeps the prior verified live publication. Temperature remains a historical normal, without a current-temperature feed.
 
 ## Agricultural interpretation
 

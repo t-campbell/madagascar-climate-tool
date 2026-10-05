@@ -173,3 +173,10 @@ th { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-
   .report { border: 0; }
   .chart-section, .interpretation-section { break-inside: avoid; }
 }
+
+.recent-actual-key { background: #357ba4; }
+.recent-normal-key { background: #9a5823; }
+.recent-normal-line { fill: none; stroke: #9a5823; stroke-width: 2.5; }
+.recent-section .freshness { margin: 0; }
+.recent-section .temperature-legend { margin-bottom: 1rem; }
+.recent-section #recent-status.stale { color: #8b3b21; font-weight: 600; }

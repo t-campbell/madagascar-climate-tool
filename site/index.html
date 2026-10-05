@@ -121,6 +121,30 @@
           </div>
         </article>
 
+        <article class="chart-section recent-section" id="recent-section">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="recentEyebrow">recent rainfall · CHIRPS Final</p>
+              <h3 data-i18n="recentTitle">what fell recently</h3>
+            </div>
+            <p class="freshness" id="recent-freshness" role="status"></p>
+          </div>
+          <p id="recent-status" class="chart-note" role="status"></p>
+          <div class="temperature-legend" aria-hidden="true">
+            <span><i class="recent-actual-key"></i><span data-i18n="recentActual">actual rainfall</span></span>
+            <span><i class="recent-normal-key"></i><span data-i18n="recentTypical">1991–2020 mean</span></span>
+          </div>
+          <div id="recent-chart" class="chart" role="img"></div>
+          <p class="chart-note" data-i18n="recentNote">twelve complete months of Final rainfall estimates. day-count pairs show actual / historical average. these are past observations, not a forecast.</p>
+          <div class="chart-table-wrap">
+            <table id="recent-table">
+              <caption class="visually-hidden" data-i18n="recentCaption">recent monthly rainfall compared with the matching historical calendar month</caption>
+              <thead><tr><th data-i18n="month">month</th><th data-i18n="recentActual">actual rainfall</th><th data-i18n="recentTypical">1991–2020 mean</th><th data-i18n="recentDifference">difference</th><th data-i18n="rainyDays">rainy days</th><th data-i18n="days20">days ≥20 mm</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </article>
+
         <article class="chart-section temperature-section">
           <div class="section-heading">
             <div>
@@ -165,6 +189,7 @@
           <p><strong data-i18n="methodFrequencyLabel">rain frequency:</strong> <span data-i18n="methodFrequency">a rainy day has at least 1 mm. a heavy-rain day has at least 20 mm. both columns show the mean number of days per month across the baseline years.</span></p>
           <p><strong data-i18n="methodTemperatureLabel">temperature:</strong> <span data-i18n="methodTemperature">ERA5-Land at 0.1° resolution, using 1991–2020 data. each monthly low is the mean of daily minimum temperatures; each high is the mean of daily maximum temperatures.</span></p>
           <p><strong data-i18n="methodRoundingLabel">rounding:</strong> <span data-i18n="methodRounding">displayed rainfall totals, ranges, and wet-day intensity are rounded to the nearest whole millimetre. mean rainy-day and heavy-rain-day counts are rounded to the nearest whole day, and temperatures to the nearest whole degree Celsius. calculations and chart positions still use the unrounded values.</span></p>
+          <p><strong data-i18n="methodRecentLabel">recent rainfall:</strong> <span data-i18n="methodRecent">complete months of CHIRPS v3 Final RNL, using the same grid and thresholds as the baseline. Final normally arrives in the third week of the following month. differences compare each month with its 1991–2020 mean; percentage differences are omitted when the baseline is below 1 mm. daily rainfall is disaggregated from pentad totals, so day counts are estimates. the displayed observation date remains visible offline.</span></p>
           <p><strong data-i18n="methodPlacesLabel">place names:</strong> <span data-i18n="methodPlacesBefore">settlement search uses</span> <a href="https://www.geonames.org/" rel="external">GeoNames</a> <span data-i18n="methodPlacesAfter">data (CC BY). enter coordinates if the local name is missing or ambiguous.</span></p>
         </div>
       </section>

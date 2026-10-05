@@ -1,3 +1,4 @@
+import { baselineMonth, expectedFinalMonth, rainfallDifference } from "./recent.js";
 import { displayMonth, language, subscribeLanguageChange, t } from "./i18n.js";
 
 const MONTHS = Array.from({ length: 12 }, (_, index) => index);
@@ -8,9 +9,9 @@ const TEMPERATURE_AXIS_MAX_C = 40;
 const MADAGASCAR_BOUNDS = { south: -26, north: -11, west: 43, east: 51 };
 
 const locale = () => language() === "mg" ? "mg-MG" : "en";
-const formatMillimeters = (value) => Math.round(value).toLocaleString(locale());
-const formatDays = (value) => Math.round(value).toLocaleString(locale());
-const formatTemperature = (value) => Math.round(value).toLocaleString(locale());
+const formatMillimeters = (value) => (Math.round(value) || 0).toLocaleString(locale());
+const formatDays = (value) => (Math.round(value) || 0).toLocaleString(locale());
+const formatTemperature = (value) => (Math.round(value) || 0).toLocaleString(locale());
 
 const elements = {
   report: document.querySelector("#report"),
@@ -41,9 +42,14 @@ const elements = {
   interpretationList: document.querySelector("#interpretation-list"),
   cellDetails: document.querySelector("#cell-details"),
   offlineStatus: document.querySelector("#offline-status"),
+  recentChart: document.querySelector("#recent-chart"),
+  recentTableBody: document.querySelector("#recent-table tbody"),
+  recentStatus: document.querySelector("#recent-status"),
+  recentFreshness: document.querySelector("#recent-freshness"),
 };
 
 let manifest;
+let locationRequestId = 0;
 let latestRainChartData = null;
 let latestReport = null;
 let offlineStatusKey = "checkingOffline";
@@ -96,6 +102,7 @@ function nearestInTile(tile, lat, lon) {
 }
 
 async function loadCoordinate(lat, lon, place = null) {
+  const requestId = ++locationRequestId;
   if (!withinMadagascar(lat, lon)) {
     throw new Error(t("outsideCoverage"));
   }
@@ -112,7 +119,23 @@ async function loadCoordinate(lat, lon, place = null) {
   if (!temperature || temperature.distance > manifest.maxTemperatureCellDistanceKm) {
     throw new Error(t("noTemperatureCell20"));
   }
-  renderReport({ rain, temperature }, { requestedLat: lat, requestedLon: lon, tileId, place });
+  if (requestId !== locationRequestId) return;
+  const nearest = { rain, temperature, recent: null, recentError: false };
+  const request = { requestedLat: lat, requestedLon: lon, tileId, place };
+  renderReport(nearest, request);
+  if (manifest.recentRainfall) {
+    try {
+      const tile = await loadTile(tileId, manifest.recentRainfall.tileTemplate, "recentUnavailable");
+      if (tile.release !== manifest.recentRainfall.release
+        || JSON.stringify(tile.months) !== JSON.stringify(manifest.recentRainfall.months)) throw new Error("wrong recent rainfall release");
+      const recent = nearestInTile(tile, lat, lon);
+      if (!recent || Math.abs(recent.lat - rain.lat) > 0.00001 || Math.abs(recent.lon - rain.lon) > 0.00001) throw new Error("recent and historical cells differ");
+      nearest.recent = { ...recent, months: tile.months };
+    } catch (error) {
+      nearest.recentError = true;
+    }
+    if (requestId === locationRequestId) renderReport(nearest, request);
+  }
 }
 
 function shardFor(query) {
@@ -405,6 +428,66 @@ function buildInterpretation(rain, heavyRainDays, risk) {
   return notes;
 }
 
+function renderRecent(nearest) {
+  elements.recentChart.replaceChildren();
+  elements.recentTableBody.replaceChildren();
+  elements.recentStatus.classList.remove("stale");
+  elements.recentFreshness.textContent = manifest.recentRainfall
+    ? t("recentThrough", { date: manifest.recentRainfall.dataThrough }) : "";
+  if (!nearest.recent) {
+    elements.recentStatus.textContent = t(nearest.recentError ? "recentUnavailable"
+      : manifest.recentRainfall ? "recentLoading" : "recentPending");
+    return;
+  }
+  const [,, values, rainy, heavy] = nearest.recent.cell;
+  const months = nearest.recent.months;
+  const normals = months.map((period) => nearest.rain.cell[2][baselineMonth(period)]);
+  const labels = months.map((period) => `${displayMonth(baselineMonth(period))} ${period.slice(2, 4)}`);
+  const maximum = manifest.recentRainfall.axisMaxMm;
+  const width = 760, height = 250;
+  const margin = { left: 44, right: 24, top: 22, bottom: 34 };
+  const plotHeight = height - margin.top - margin.bottom;
+  const slot = (width - margin.left - margin.right) / months.length;
+  const y = (value) => margin.top + plotHeight * (1 - value / maximum);
+  const svg = svgElement("svg", { viewBox: `0 0 ${width} ${height}`, "aria-hidden": "true" });
+  for (let tick = 0; tick <= 4; tick += 1) {
+    const value = maximum * tick / 4, tickY = y(value);
+    svg.append(svgElement("line", { x1: margin.left, x2: width - margin.right, y1: tickY, y2: tickY, class: "axis" }));
+    const label = svgElement("text", { x: margin.left - 8, y: tickY + 4, "text-anchor": "end" });
+    label.textContent = String(Math.round(value));
+    svg.append(label);
+  }
+  values.forEach((value, index) => {
+    const bar = svgElement("rect", { x: margin.left + (index + 0.16) * slot, y: y(value), width: slot * 0.68,
+      height: plotHeight * value / maximum, rx: 2, class: "rain-bar" });
+    const title = svgElement("title");
+    title.textContent = t("recentTooltip", { month: labels[index], actual: formatMillimeters(value), normal: formatMillimeters(normals[index]) });
+    bar.append(title);
+    svg.append(bar);
+    const label = svgElement("text", { x: margin.left + (index + 0.5) * slot, y: height - 12, "text-anchor": "middle" });
+    label.textContent = labels[index];
+    svg.append(label);
+  });
+  svg.append(svgElement("polyline", { points: normals.map((value, index) => `${margin.left + (index + 0.5) * slot},${y(value)}`).join(" "), class: "recent-normal-line" }));
+  elements.recentChart.append(svg);
+  elements.recentChart.setAttribute("aria-label", t("recentChartAria"));
+  const stale = months.at(-1) < expectedFinalMonth();
+  elements.recentStatus.classList.toggle("stale", stale);
+  elements.recentStatus.textContent = t(stale ? "recentStale" : "recentAxis", { max: formatMillimeters(maximum) });
+  const signed = (number) => `${Math.round(number) > 0 ? "+" : ""}${formatMillimeters(number)}`;
+  elements.recentTableBody.replaceChildren(...months.map((period, index) => {
+    const row = document.createElement("tr");
+    const month = baselineMonth(period), difference = rainfallDifference(values[index], normals[index]);
+    const change = `${signed(difference.mm)} mm${difference.percent === null ? "" : ` (${signed(difference.percent)}%)`}`;
+    for (const value of [labels[index], `${formatMillimeters(values[index])} mm`, `${formatMillimeters(normals[index])} mm`, change,
+      `${formatDays(rainy[index])} / ${formatDays(nearest.rain.cell[5][month])}`,
+      `${formatDays(heavy[index])} / ${formatDays(nearest.rain.cell[6][month])}`]) {
+      const cell = document.createElement("td"); cell.textContent = value; row.append(cell);
+    }
+    return row;
+  }));
+}
+
 function renderReport(nearest, request) {
   latestReport = { nearest, request };
   const [,, rain, p10, p90, rainyDays, heavyRainDays, wetIntensity, dryRisk] = nearest.rain.cell;
@@ -444,6 +527,7 @@ function renderReport(nearest, request) {
     temperatureDistance: nearest.temperature.distance.toFixed(1),
   });
 
+  renderRecent(nearest);
   renderRainChart(rain, rainyDays, heavyRainDays);
   renderTemperatureChart(minimumTemperature, maximumTemperature);
   elements.rainTableBody.replaceChildren(...MONTHS.map((index) => {
@@ -534,7 +618,7 @@ elements.locationButton.addEventListener("click", () => {
 
 async function initialize() {
   try {
-    const manifestResponse = await fetch("data/manifest.json");
+    const manifestResponse = await fetch("data/manifest.json", { cache: "no-cache" });
     if (!manifestResponse.ok) throw new Error(t("manifestUnavailable"));
     manifest = await manifestResponse.json();
     if (manifest.status !== "climate-baseline") throw new Error(t("unexpectedData"));

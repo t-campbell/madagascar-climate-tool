@@ -4,7 +4,7 @@ A low-bandwidth climate reference for agriculture volunteers and extension staff
 
 ## Current status
 
-The released baseline uses CHIRPS v3 Final rainfall and ERA5-Land temperature data for 1991–2020 across Madagascar. Rainfall metrics are available at the nearest 0.05° land cell (within 12 km); monthly mean daily minimum and maximum temperature are available at the nearest 0.1° land cell (within 20 km). Current-season observations remain deferred. This historical reference is not a forecast.
+The released baseline uses CHIRPS v3 Final rainfall and ERA5-Land temperature data for 1991–2020 across Madagascar. Rainfall metrics are available at the nearest 0.05° land cell (within 12 km); monthly mean daily minimum and maximum temperature are available at the nearest 0.1° land cell (within 20 km). A separate recent-rainfall panel shows the latest twelve complete CHIRPS Final months and compares each with its matching historical month. This historical reference is not a forecast.
 
 ## Architecture
 
@@ -34,7 +34,11 @@ npm run check
 
 ## Rainfall data release
 
-`.github/workflows/publish-rainfall-demo.yml` retrieves the successful national CHIRPS baseline artifact from run 34862522613, downloads the [GeoNames MG dump](https://download.geonames.org/export/dump/), generates static tiles and search shards, checks and builds the site, commits the release, and deploys it. The artifact expires October 14, 2026; for future regenerations retain a durable baseline or rerun the CHIRPS pipeline. No CDS token is required for this rainfall-only release. Place names © GeoNames, CC BY; attribution appears on the site.
+`.github/workflows/publish-rainfall-demo.yml` retrieves the checksummed baseline from the durable `chirps-baseline-v1` release, downloads the [GeoNames MG dump](https://download.geonames.org/export/dump/), regenerates rainfall tiles and search shards, preserves temperature and recent-rainfall references, checks and builds the site, and deploys it. No CDS token is required. Place names © GeoNames, CC BY; attribution appears on the site.
+
+## Autonomous monthly rainfall
+
+`update monthly rainfall` checks weekly for newly completed CHIRPS v3 Final RNL months. It verifies every day and baseline land cell, archives each reduced month in `chirps-monthly-v1`, and produces a rolling twelve-month release. Passing staging smoke tests precede production deployment. A no-op run makes no data commit or deployment; source delays and failures open one deduplicated repository issue. `data/update-status.json` is the public freshness endpoint. See [operations](docs/operations.md) for reruns and rollback.
 
 ## Temperature data release
 
