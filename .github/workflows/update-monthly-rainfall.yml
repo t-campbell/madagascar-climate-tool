@@ -2,7 +2,7 @@ name: update monthly rainfall
 
 on:
   workflow_dispatch:
-  # Removed after the first verified end-to-end run.
+  # Removed after first publication and recovery verification.
   push:
     branches: [main]
     paths: [.github/workflows/update-monthly-rainfall.yml]
@@ -46,6 +46,11 @@ jobs:
           python -m pipeline.chirps_monthly --baseline /tmp/chirps-baseline/chirps-1991-2020.npz --cache /tmp/chirps-months --archive-release chirps-monthly-v1
           python -m scripts.monthly_release snapshot
           python -m scripts.monthly_release decide >> "$GITHUB_OUTPUT"
+      - name: inspect website response
+        run: |
+          curl -sS --max-time 30 -D /tmp/site-headers -o /tmp/site-body "$PRODUCTION_URL/data/manifest.json"
+          cat /tmp/site-headers
+          head -c 300 /tmp/site-body
       - name: validate candidate
         run: |
           npm run check

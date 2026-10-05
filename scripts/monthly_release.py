@@ -73,6 +73,9 @@ def snapshot():
 
 def decide():
     changed = bool(subprocess.run(['git', 'status', '--porcelain', '--', 'data'], check=True, capture_output=True, text=True).stdout.strip())
+    if changed:
+        print('publish=true')
+        return
     candidate = json.loads(Path('data/update-status.json').read_text())
     request = Request(os.environ['PRODUCTION_URL'] + '/data/update-status.json', headers={'Cache-Control': 'no-cache'})
     try:
@@ -93,7 +96,7 @@ def alert():
     existing = next((issue for issue in issues if issue['title'] == TITLE), None)
     if failed or late:
         if not existing:
-            body = f"{'Update failed; the previous verified live release remains available.' if failed else 'CHIRPS Final is later than the normal release allowance.'}\n\nRun: {os.environ['RUN_URL']}\nData through: {summary.get('dataThrough', 'see run logs')}\nExpected through month: {summary.get('expectedThroughMonth', 'see run logs')}\n\nInspect the failed step or upstream listing, then rerun update monthly rainfall. No CDS request is involved."
+            body = f"{'Update did not finish verification. Inspect this run and the live health endpoint; prior durable releases are available for rollback.' if failed else 'CHIRPS Final is later than the normal release allowance.'}\n\nRun: {os.environ['RUN_URL']}\nData through: {summary.get('dataThrough', 'see run logs')}\nExpected through month: {summary.get('expectedThroughMonth', 'see run logs')}\n\nInspect the failed step or upstream listing, then rerun update monthly rainfall. No CDS request is involved."
             gh('issue', 'create', '--title', TITLE, '--body', body)
     elif existing:
         gh('issue', 'close', str(existing['number']))
