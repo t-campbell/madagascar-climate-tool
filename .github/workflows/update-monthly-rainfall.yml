@@ -7,10 +7,8 @@ on:
         description: Deploy a validated application change even without a new month
         type: boolean
         default: false
-  # Removed after first publication and recovery verification.
-  push:
-    branches: [main]
-    paths: [.github/workflows/update-monthly-rainfall.yml]
+  schedule:
+    - cron: '17 3 * * 5'
 
 permissions:
   contents: write
@@ -21,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  FORCE_DEPLOY: ${{ github.event_name == 'push' || inputs.force_deploy == true }}
+  FORCE_DEPLOY: ${{ inputs.force_deploy == true }}
   GH_TOKEN: ${{ github.token }}
   GH_REPO: ${{ github.repository }}
   PRODUCTION_URL: https://madagascar-climate-field-guide.mada-climate-tool.workers.dev
@@ -88,14 +86,6 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: verify production
         run: python -m scripts.verify_recent --base-url "$PRODUCTION_URL" --expected-release "${{ steps.acquire.outputs.release }}"
-      - name: verify unchanged rerun stays idle
-        if: github.event_name == 'push'
-        run: |
-          python -m pipeline.chirps_monthly --baseline /tmp/chirps-baseline/chirps-1991-2020.npz --cache /tmp/chirps-months --archive-release chirps-monthly-v1
-          git diff --exit-code -- data
-          FORCE_DEPLOY=false python -m scripts.monthly_release decide > /tmp/idle-check
-          grep -qx 'publish=false' /tmp/idle-check
-          python -c 'import json; assert not json.load(open("update-summary.json"))["newFiles"]'
       - name: update failure or source-delay alert
         if: always()
         env:

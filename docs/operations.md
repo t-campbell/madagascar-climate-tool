@@ -22,7 +22,9 @@ One GitHub issue titled `Monthly rainfall update needs attention` is opened for 
 
 To retry, run `update monthly rainfall` with its Run workflow button. Archived months are restored and validated rather than downloaded again. For a corrected upstream month or methodology change, create a new versioned monthly archive and rebuild explicitly. Never overwrite a known monthly asset silently.
 
-GitHub can disable scheduled workflows after 60 days without repository activity in a public repository. Normal monthly data commits keep the repository active. Check workflow enablement and live freshness independently if data commits stop; a cron workflow cannot monitor its own disabled state.
+GitHub can disable scheduled workflows after 60 days without repository activity in a public repository. Normal monthly data commits keep the repository active. An independent read-only freshness watchdog checks the repository on Sundays and notifies the project owner about a disabled/missing workflow, ten days without an updater run, unresolved failures, inconsistent health metadata, or overdue data. This watchdog is separate from GitHub cron; include its ownership in a staff handoff. A cron workflow cannot monitor its own disabled state.
+
+Smoke checks use curl, an expected release identifier on manifest/health requests, and short retries for edge propagation. A passing response from an older valid release does not count as success. Manual Run workflow supports `force_deploy` for a validated application change without new monthly data.
 
 ## Caching
 
